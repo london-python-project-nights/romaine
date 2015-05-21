@@ -16,7 +16,7 @@ def test_getting_no_steps():
     from romaine.core import Core
     core = Core()
     # And I get the steps in "steps.no_steps"
-    importlib.import_module("steps.no_steps", package=".")
+    importlib.import_module("tests.steps.no_steps")
     # Then romaine has no steps
     nose.tools.assert_false(core.steps)
 
@@ -26,9 +26,9 @@ def test_getting_some_steps():
     from romaine.core import Core
     core = Core()
     # And I get the steps in "steps.some_steps"
-    importlib.import_module("steps.some_steps", package=".")
+    importlib.import_module("tests.steps.some_steps")
     # Then romaine has no steps
-    nose.tools.assert_equal(core.steps,
+    nose.tools.assert_equal(sorted(list(core.steps.keys())),
                             [
                                 'step_1',
                                 'step_2',
