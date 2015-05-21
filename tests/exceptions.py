@@ -1,0 +1,2 @@
+class RunningAsRootError(Exception):
+    pass
