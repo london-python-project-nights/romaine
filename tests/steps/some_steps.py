@@ -19,3 +19,19 @@ def step_4():
 @Step('step_5')
 def step_5():
     pass
+
+@Given('Given step_6')
+def step_6():
+    pass
+
+@When('When step_7')
+def step_7():
+    pass
+
+@Then('Then step_8')
+def step_8():
+    pass
+
+@And('And step_9')
+def step_9():
+    pass

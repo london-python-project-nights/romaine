@@ -22,21 +22,29 @@ class TestStepFinding(TestCase):
         self.assertFalse(core.steps)
 
     def test_getting_some_steps(self):
-        step_names = [
-            'step_1',
-            'step_2',
-            'step_3',
-            'step_4',
-            'step_5',
-        ]
+        expected = {
+            'step_1': "Given",
+            'step_2': "When",
+            'step_3': "Then",
+            'step_4': "And",
+            'step_5': None,
+            'step_6': "Given",
+            'step_7': "When",
+            'step_8': "Then",
+            'step_9': "And",
+        }
+
+        step_names = expected.keys()
         # Given I have Romaine's core
         from romaine.core import Core
         core = Core()
         # And I get the steps in "steps.some_steps"
         some_steps = importlib.import_module("tests.steps.some_steps")
         # Then romaine has the expected step names
-        self.assertEqual(sorted(list(core.steps.keys())), step_names)
+        self.assertEqual(sorted(list(core.steps.keys())), sorted(step_names))
         # And romaine has the expected step functions
         for step_name in step_names:
             self.assertEqual(core.steps[step_name].func,
                              getattr(some_steps, step_name))
+            self.assertEqual(core.steps[step_name].prefix,
+                             expected[step_name])
