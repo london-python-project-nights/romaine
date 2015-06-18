@@ -6,10 +6,11 @@ class Step(object):
 
     def __init__(self, name):
         self._raw_name = name
-        if self.prefix is not None and name.startswith(self.prefix):
-            # Was complaining about len(None) - we have guarded against this
-            # noinspection PyTypeChecker
-            name = name[len(self.prefix)+1:]
+
+        if self.prefix is not None:
+            prefix = self.prefix + " "
+            if name.startswith(prefix):
+                name = name[len(prefix):]
         self.name = name.strip()
         self.func = None
 

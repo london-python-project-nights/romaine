@@ -1,14 +1,14 @@
 from romaine.steps import *
 
-@Given('step_1')
+@Given('When step_1')
 def step_1():
     pass
 
-@When('step_2')
+@When('Then step_2')
 def step_2():
     pass
 
-@Then('step_3')
+@Then('And step_3')
 def step_3():
     pass
 
@@ -20,18 +20,18 @@ def step_4():
 def step_5():
     pass
 
-@Given('Given step_6')
+@Given('Givenness step_6')
 def step_6():
     pass
 
-@When('When step_7')
+@When('Whence step_7')
 def step_7():
     pass
 
-@Then('Then step_8')
+@Then('Thenceforth step_8')
 def step_8():
     pass
 
-@And('And step_9')
+@And('Android step_9')
 def step_9():
     pass
