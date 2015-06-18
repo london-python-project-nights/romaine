@@ -1,6 +1,6 @@
-import nose
-import os
+from tests import common  # noqa
 from tests import exceptions
+import os
 import unittest
 
 
@@ -49,7 +49,7 @@ class TestLocateFeatures(unittest.TestCase):
             # Attempt to remove all the directories we created
             os.removedirs(os.path.join(base_path, 'subdir'))
 
-    def features_found_by_relative_path(self):
+    def test_features_found_by_relative_path(self):
         """
             Check we can find features by a relative path.
         """
@@ -65,7 +65,7 @@ class TestLocateFeatures(unittest.TestCase):
         #   | tests/features/feature1        |
         #   | tests/features/feature2        |
         #   | tests/features/subdir/feature3 |
-        nose.tools.assert_equal(
+        self.assertEqual(
             sorted(results),
             [
                 'tests/features/feature1',
@@ -74,7 +74,7 @@ class TestLocateFeatures(unittest.TestCase):
                 ]
             )
 
-    def features_found_by_absolute_path(self):
+    def test_features_found_by_absolute_path(self):
         """
             Check we can find features by an absolute path.
         """
@@ -90,7 +90,7 @@ class TestLocateFeatures(unittest.TestCase):
         #   | /tmp/romaine_tests/features/feature1        |
         #   | /tmp/romaine_tests/features/feature2        |
         #   | /tmp/romaine_tests/features/subdir/feature3 |
-        nose.tools.assert_equal(
+        self.assertEqual(
             sorted(results),
             [
                 '/tmp/romaine_tests/features/feature1',
@@ -99,7 +99,7 @@ class TestLocateFeatures(unittest.TestCase):
                 ],
             )
 
-    def confirm_features_in_class_variable(self):
+    def test_confirm_features_in_class_variable(self):
         """
             Check feature location populates class features variable.
         """
@@ -120,8 +120,8 @@ class TestLocateFeatures(unittest.TestCase):
         #   | tests/features/feature1                     |
         #   | tests/features/feature2                     |
         #   | tests/features/subdir/feature3              |
-        nose.tools.assert_equal(
-            sorted(core.features),
+        self.assertEqual(
+            sorted(core.feature_file_paths),
             [
                 '/tmp/romaine_tests/features/feature1',
                 '/tmp/romaine_tests/features/feature2',
