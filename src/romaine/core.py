@@ -6,7 +6,7 @@ class Core(object):
         The core of the Romaine, provides BDD test API.
     """
     # All located features
-    feature_file_paths = []
+    feature_file_paths = set()
     instance = None
 
     def __init__(self):
@@ -43,6 +43,6 @@ class Core(object):
                         )
                     )
 
-        self.feature_file_paths.extend(feature_candidates)
+        self.feature_file_paths.update(feature_candidates)
 
         return feature_candidates
