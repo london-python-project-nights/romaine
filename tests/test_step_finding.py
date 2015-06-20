@@ -17,7 +17,7 @@ class TestStepFinding(TestCase):
         from romaine.core import Core
         core = Core()
         # And I get the steps in "steps.no_steps"
-        importlib.import_module("tests.steps.no_steps")
+        importlib.import_module("test_data.steps.no_steps")
         # Then romaine has no steps
         self.assertFalse(core.steps)
 
@@ -39,7 +39,7 @@ class TestStepFinding(TestCase):
         from romaine.core import Core
         core = Core()
         # And I get the steps in "steps.some_steps"
-        some_steps = importlib.import_module("tests.steps.some_steps")
+        some_steps = importlib.import_module("test_data.steps.some_steps")
         # Then romaine has the expected step names
         self.assertEqual(sorted(list(core.steps.keys())),
                          sorted(step_names))
@@ -68,7 +68,7 @@ class TestStepFinding(TestCase):
         from romaine.core import Core
         core = Core()
         # And I get the steps in "steps.some_steps"
-        some_steps = importlib.import_module("tests.steps.weird_steps")
+        some_steps = importlib.import_module("test_data.steps.weird_steps")
         # Then romaine has the expected step names
         self.assertEqual(sorted(list(core.steps.keys())),
                          sorted(step_names))
