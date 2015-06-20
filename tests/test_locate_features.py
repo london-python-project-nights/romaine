@@ -99,6 +99,27 @@ class TestLocateFeatures(unittest.TestCase):
                 ],
             )
 
+    def test_multiple_calls_no_duplicates(self):
+        """
+            Confirm no duplicates for two calls with the same path.
+        """
+        # Given I have Romaine's core
+        from tests.common import romaine
+        core = romaine.Core()
+
+        # When I locate features in /tmp/romaine_tests/features
+        core.locate_features('/tmp/romaine_tests/features')
+        #  And I locate features in /tmp/romaine_tests/features
+        core.locate_features('/tmp/romaine_tests/features')
+
+        # Then the core's feature_paths_list variable contains no duplicates
+        feature_file_paths = list(core.feature_file_paths)
+        for item in feature_file_paths:
+            self.assertEqual(
+                feature_file_paths.count(item),
+                1,
+                )
+
     def test_confirm_features_in_class_variable(self):
         """
             Check feature location populates class features variable.
@@ -112,7 +133,7 @@ class TestLocateFeatures(unittest.TestCase):
         core.locate_features('/tmp/romaine_tests/features')
         core.locate_features('tests/features')
 
-        # Then the core's features variable contains:
+        # Then the core's feature_paths_list variable contains:
         #   | path                                        |
         #   | /tmp/romaine_tests/features/feature1        |
         #   | /tmp/romaine_tests/features/feature2        |
