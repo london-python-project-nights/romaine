@@ -1,4 +1,5 @@
 import os
+from romaine.parser import Parser
 
 
 class Core(object):
@@ -14,6 +15,7 @@ class Core(object):
             Initialise Romaine core.
         """
         self.steps = {}
+        self.Parser = Parser
         Core.instance = self
 
     def locate_features(self, path):
@@ -40,8 +42,8 @@ class Core(object):
                     os.path.join(
                         base_directory,
                         feature_file
-                        )
                     )
+                )
 
         self.feature_file_paths.update(feature_candidates)
 
