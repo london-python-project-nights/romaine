@@ -45,7 +45,7 @@ $ python setup.py test
 
 ## Requirements
 
-* Python 3.2+
+* Python 2.7 or 3.2+
 * Linux, Mac OS X (Should work on BSD, not tested on Windows)
 
 ## Licence
