@@ -1,0 +1,22 @@
+#! /usr/bin/env bash
+set -e
+
+if [[ -d contrib_tools ]]; then
+  for python in 2 3; do
+    if [[ ! -d env${python} ]]; then
+      echo "Creating environment for Python ${python}"
+      virtualenv env${python} --python=python${python}
+    else
+      echo "Environment for Python ${python} already exists."
+    fi
+  
+    echo "pip installing prerequisites"
+    env${python}/bin/pip install flake8 coverage
+  done
+
+  echo ""
+  echo "Preparation complete. You can now run checks with:"
+  echo "contrib_tools/run_checks"
+else
+  echo "This should be run from the root of the git repo."
+fi
