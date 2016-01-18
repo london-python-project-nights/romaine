@@ -1,0 +1,99 @@
+#! /usr/bin/env bash
+echo "Preparing- removing all pycs"
+find -name '*.pyc' -delete
+
+for python in 2 3; do
+  echo "Running checks for python ${python}"
+  env=env${python}
+  if [[ ! -d env${python} ]]; then
+    echo "env${python} dir containing virtualenv for python ${python} does not exist."
+    echo "Please create a virtualenv for this version of python."
+    echo "e.g. on Ubuntu 14.04 (also tested on OS X):"
+    if [[ ${python} -eq 2 ]]; then
+        echo "virtualenv env${python} --python=python2"
+    else
+        echo "virtualenv env${python} --python=python3"
+    fi
+    exit 1
+  fi
+
+  . ${env}/bin/activate
+
+  echo "Checking prerequisites for python ${python}..."
+  if ! which flake8 >/dev/null || ! which coverage >/dev/null; then
+    echo "flake8 or coveragenot present for python ${python}, cannot run code quality checker."
+    echo "You should: env${python}/bin/pip install flake8 coverage"
+    exit 1
+  fi
+  echo "...prerequisites are present."
+
+  exit_status=0
+
+  echo ""
+  echo "------------------------------"
+  echo "Running style and syntax checks for python ${python}"
+  rm -f .romaine_code_quality_error
+  echo "Checking tests code quality..."
+  find tests -name '*.py' -exec bash -c 'flake8 --ignore=E402 {} || touch .romaine_code_quality_error' \;
+  if [[ -f .romaine_code_quality_error ]]; then
+    echo "ERROR: Please correct errors listed above before running again."
+    exit_status=1
+  else
+    echo "...Romaine tests code quality tests complete. No errors found."
+  fi
+  
+  # Blank line for formatting
+  echo ""
+  
+  rm -f .romaine_code_quality_error
+  echo "Checking Romaine core code quality..."
+  find src/romaine -name '*.py' -exec bash -c 'flake8 {} || touch .romaine_code_quality_error' \;
+  if [[ -f .romaine_code_quality_error ]]; then
+    echo "ERROR: Please correct errors listed above before running again."
+    exit_status=1
+  else
+    echo "...Romaine Core code quality tests complete. No errors found."
+  fi
+
+  echo ""
+  echo "------------------------------"
+  rm .coverage
+  echo "Running tests and generating coverage report"
+  env${python}/bin/coverage run --source=src setup.py test >/dev/null
+  if [[ $? -ne 0 ]]; then
+    exit_status=1
+  fi
+
+  echo "Checking coverage..."
+  env${python}/bin/coverage report -m --fail-under=100
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: Coverage is insufficient- should be 100%."
+    exit_status=1
+  else
+    echo "...coverage is good."
+  fi
+
+  if [[ ${exit_status} -ne 0 ]]; then
+    # Blank line for formatting
+    echo ""
+    echo "Please fix all style/syntax errors and ensure 100% test successes and coverage."
+  else
+    echo ""
+    echo "Python ${python} code looks good!"
+  fi
+    
+
+  echo "Finished checking for python ${python}"
+  echo "=============================="
+  deactivate
+done
+
+if [[ ${exit_status} -ne 0 ]]; then
+  # Blank line for formatting
+  echo ""
+  echo "ERROR: There were problems identified- please read the output and correct any errors."
+else
+  echo ""
+  echo "All looks good- this may be good to submit!"
+fi
+exit ${exit_status}
