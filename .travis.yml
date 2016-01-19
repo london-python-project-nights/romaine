@@ -7,7 +7,7 @@ python:
   - "3.4"
 
 before_script:
-  - flake8 src/ test_data/ tests/
+  - flake8 --ignore=E402 src/ test_data/ tests/
 
 install:
   - pip install flake8

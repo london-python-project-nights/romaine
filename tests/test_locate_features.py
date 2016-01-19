@@ -22,7 +22,7 @@ class TestLocateFeatures(unittest.TestCase):
         if os.geteuid() == 0:
             raise exceptions.RunningAsRootError(
                 'Running as root may be harmful, aborting.'
-                )
+            )
 
         for base_path in self.feature_paths:
             try:
@@ -71,8 +71,8 @@ class TestLocateFeatures(unittest.TestCase):
                 'tests/features/feature1',
                 'tests/features/feature2',
                 'tests/features/subdir/feature3',
-                ]
-            )
+            ]
+        )
 
     def test_features_found_by_absolute_path(self):
         """
@@ -96,8 +96,8 @@ class TestLocateFeatures(unittest.TestCase):
                 '/tmp/romaine_tests/features/feature1',
                 '/tmp/romaine_tests/features/feature2',
                 '/tmp/romaine_tests/features/subdir/feature3',
-                ],
-            )
+            ],
+        )
 
     def test_multiple_calls_no_duplicates(self):
         """
@@ -118,7 +118,7 @@ class TestLocateFeatures(unittest.TestCase):
             self.assertEqual(
                 feature_file_paths.count(item),
                 1,
-                )
+            )
 
     def test_confirm_features_in_class_variable(self):
         """
@@ -150,5 +150,5 @@ class TestLocateFeatures(unittest.TestCase):
                 'tests/features/feature1',
                 'tests/features/feature2',
                 'tests/features/subdir/feature3',
-                ]
-            )
+            ]
+        )
