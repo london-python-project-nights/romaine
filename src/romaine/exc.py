@@ -1,0 +1,4 @@
+
+
+class UnimplementedStepError(Exception):
+    pass
