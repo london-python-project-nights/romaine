@@ -4,22 +4,42 @@ We want a logger on the core, and the core should have methods to print out:
     [x] Error for an unimplemented step
 
     [x] Info for a finished step
-    [x]     Info for step success
-    [x]     Warning for step skipped
-    [x]     Error for step failure
+    [x]     Info: step success
+    [x]     Warning: step skipped
+    [x]     Error: step failure
+
+    [ ] Info for a finished scenario
+    [ ]     Info: scenario success
+    [ ]     Warning: scenario skipped
+    [ ]     Error: scenario failure
+
+    [ ] Info for a finished scenario outline
+    [ ]     Info: scenario outline success
+    [ ]     Warning: scenario outline skipped
+    [ ]     Error: scenario outline failure
+
+    [ ] Info for a finished feature
+    [ ]     Info: feature success
+    [ ]     Warning: feature skipped
+    [ ]     Error: feature failure
 
     [ ] Run statistics
-    [ ]     Total number of Features, Scenarios, Steps
-    [ ]     Number of passed Features, Scenarios, Steps
-    [ ]     Number of failed Features, Scenarios, Steps
-    [ ]     Number of skipped Features, Scenarios, Steps
-    [ ]     Duration of each Feature, Scenario, Step (debug)
+    [ ]     Info: Total number of Features, Scenarios, Steps
+    [ ]     Info: Number of passed Features, Scenarios, Steps
+    [ ]     Info: Number of failed Features, Scenarios, Steps
+    [ ]     Info: Number of skipped Features, Scenarios, Steps
+    [ ]     Debug: Duration of each Feature, Scenario, Step (debug)
 
     [ ] Some debug level output for the feature/step finding:
-    [ ]     DEBUG: Searching for features in , found , are acceptable as features.
-    [ ]     DEBUG: Obtained steps from .
-    [ ]     DEBUG: Asked to run step with string by feature , selected step
-    [ ]     Warn for empty feature files
+    [ ]     Debug: Searching for features in , found , are acceptable as features.
+    [ ]     Debug: Obtained steps from .
+    [ ]     Debug: Asked to run step with string by feature , selected step
+    [ ]     Warn: Empty feature files
+
+    [ ] Alert method actually does something
+    [ ]     Levels: logs to logging.Logger with appropriate log levels
+    [ ]     Text: can log text
+    [ ]     Exceptions: can log an exception given (exc_type, exc_val, exc_tb)
 
 """
 import unittest
