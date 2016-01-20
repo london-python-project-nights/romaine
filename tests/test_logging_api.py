@@ -9,8 +9,8 @@ We want a logger on the core, and the core should have methods to print out:
     [x]     Error: step failure
 
     [x] Info for a starting scenario
-    [ ] Info for a starting scenario outline
-    [ ] Info for a starting feature
+    [x] Info for a starting scenario outline
+    [x] Info for a starting feature
 
     [ ] Info for a scenario outline example:
     [ ]     Info: example success
@@ -45,6 +45,9 @@ from romaine import exc
 
 
 def given_a_test_step():
+    """
+    Given a test step
+    """
     return {
         'leading_comments_and_space': [],
         'type': "Given",
@@ -55,12 +58,54 @@ def given_a_test_step():
 
 
 def given_a_test_scenario():
+    """
+    Scenario: Test Scenario
+    """
     return {
         'leading_comments_and_space': [],
         'type': 'scenario',
         'tags': [],
         'description': ' Test Scenario',
         'steps': [],
+    }
+
+
+def given_a_feature():
+    """
+    Feature: Test Feature
+    """
+    return {
+        'header': ['Feature: Test Feature'],
+        'tags': [],
+        'background': None,
+        'leading_space_and_comments': [],
+        'elements': [],
+        'trailing_space_and_comments': [],
+    }
+
+
+def given_a_test_scenario_outline():
+    """
+    Scenario Outline: Test Scenario Outline
+    Examples: Test Example
+        | num | word  |
+        | 1   | one   |
+    """
+    return {
+        'leading_comments_and_space': [],
+        'type': 'scenario outline',
+        'tags': [],
+        'description': ' Test Scenario Outline',
+        'steps': [],
+        'examples': [{
+            'description': ' Test Example',
+            'columns': {
+                "num": ["1"],
+                "word": ["one"],
+            },
+            'leading_comments_and_space': [],
+            'trailing_whitespace': [],
+        }],
     }
 
 
@@ -253,4 +298,58 @@ class TestLoggingAPIStartScenario(unittest.TestCase):
 
                 )
 
-        assert passed, "No step as text found in alert calls!"
+        assert passed, "No scenario as text found in alert calls!"
+
+
+class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
+
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_start(self, mock_alert):
+
+        # Given a logger context
+        with logging.RomaineLogger() as logger:
+
+            # And a test scenario outline
+            scenario = given_a_test_scenario_outline()
+            # When I enter the scenario outline context
+            with logger.in_scenario_outline(scenario):
+                # Then the logger alerts with information with the scenario
+                # outline as text
+                passed = true_for_one_call(
+                    mock_alert,
+
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        (body == "Scenario Outline: Test Scenario Outline")
+                    )
+
+                )
+
+        assert passed, "No scenario outline as text found in alert calls!"
+
+
+class TestLoggingAPIStartFeature(unittest.TestCase):
+
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_start(self, mock_alert):
+
+        # Given a logger context
+        with logging.RomaineLogger() as logger:
+
+            # And a test scenario outline
+            feature = given_a_feature()
+            # When I enter the scenario outline context
+            with logger.in_feature(feature):
+                # Then the logger alerts with information with the scenario
+                # outline as text
+                passed = true_for_one_call(
+                    mock_alert,
+
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        (body == "Feature: Test Feature")
+                    )
+
+                )
+
+        assert passed, "No scenario outline as text found in alert calls!"

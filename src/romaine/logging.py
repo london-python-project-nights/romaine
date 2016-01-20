@@ -71,5 +71,24 @@ class RomaineLogger(object):
         finally:
             self._scenario = None
 
+    @contextmanager
+    def in_scenario_outline(self, scenario_outline):
+        self._scenario_outline = scenario_outline
+        self.alert(self.INFO,
+                   "Scenario Outline:{description}".format(**scenario_outline))
+        try:
+            yield
+        finally:
+            self._scenario_outline = None
+
+    @contextmanager
+    def in_feature(self, feature):
+        self._feature = feature
+        self.alert(self.INFO, "\n".join(feature["header"]))
+        try:
+            yield
+        finally:
+            self._feature = None
+
     def alert(self, level, body):
         pass
