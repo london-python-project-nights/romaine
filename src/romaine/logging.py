@@ -26,10 +26,12 @@ class RomaineLogger(object):
     WARNING = object()
     ERROR = object()
 
-    STEP = object()
-
     def __init__(self):
-        self.current_context = None
+        self._feature = None
+        self._scenario = None
+        self._scenario_outline = None
+        self._scenario_outline_example = None
+        self._step = None
 
     def __enter__(self):
         return self
@@ -47,8 +49,7 @@ class RomaineLogger(object):
 
     @contextmanager
     def in_step(self, step):
-        self.current_context = self.STEP, step
-
+        self._step = step
         try:
             yield
         except exc.SkipTest:
@@ -56,11 +57,19 @@ class RomaineLogger(object):
         except Exception as ex:
             self.alert(self.ERROR, "{type} {text}".format(**step))
             self.alert(self.ERROR, sys.exc_info())
-
         else:
             self.alert(self.INFO, "{type} {text}".format(**step))
+        finally:
+            self._step = None
 
-        self.current_context = None
+    @contextmanager
+    def in_scenario(self, scenario):
+        self._scenario = scenario
+        self.alert(self.INFO, "Scenario:{description}".format(**scenario))
+        try:
+            yield
+        finally:
+            self._scenario = None
 
     def alert(self, level, body):
         pass

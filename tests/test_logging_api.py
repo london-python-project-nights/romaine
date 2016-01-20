@@ -8,20 +8,14 @@ We want a logger on the core, and the core should have methods to print out:
     [x]     Warning: step skipped
     [x]     Error: step failure
 
-    [ ] Info for a finished scenario
-    [ ]     Info: scenario success
-    [ ]     Warning: scenario skipped
-    [ ]     Error: scenario failure
+    [x] Info for a starting scenario
+    [ ] Info for a starting scenario outline
+    [ ] Info for a starting feature
 
-    [ ] Info for a finished scenario outline
-    [ ]     Info: scenario outline success
-    [ ]     Warning: scenario outline skipped
-    [ ]     Error: scenario outline failure
-
-    [ ] Info for a finished feature
-    [ ]     Info: feature success
-    [ ]     Warning: feature skipped
-    [ ]     Error: feature failure
+    [ ] Info for a scenario outline example:
+    [ ]     Info: example success
+    [ ]     Warning: example skipped
+    [ ]     Error: example failure
 
     [ ] Run statistics
     [ ]     Info: Total number of Features, Scenarios, Steps
@@ -57,6 +51,16 @@ def given_a_test_step():
         'text': "a test step",
         'multiline_arg': None,
         'trailing_whitespace': [],
+    }
+
+
+def given_a_test_scenario():
+    return {
+        'leading_comments_and_space': [],
+        'type': 'scenario',
+        'tags': [],
+        'description': ' Test Scenario',
+        'steps': [],
     }
 
 
@@ -224,3 +228,29 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
             )
 
         ), "No exception information found in alert calls!"
+
+
+class TestLoggingAPIStartScenario(unittest.TestCase):
+
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_start(self, mock_alert):
+
+        # Given a logger context
+        with logging.RomaineLogger() as logger:
+
+            # And a test scenario
+            scenario = given_a_test_scenario()
+            # When I enter the scenario context
+            with logger.in_scenario(scenario):
+                # Then the logger alerts with information with the scenario as text
+                passed = true_for_one_call(
+                    mock_alert,
+
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        (body == "Scenario: Test Scenario")
+                    )
+
+                )
+
+        assert passed, "No step as text found in alert calls!"
