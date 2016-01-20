@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from romaine import exc
 
 
@@ -23,8 +25,13 @@ class RomaineLogger(object):
     WARNING = object()
     ERROR = object()
 
+    STEP = object()
+
+    def __init__(self):
+        self.current_context = None
+
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(exc_val, exc.UnimplementedStepError):
@@ -36,6 +43,15 @@ class RomaineLogger(object):
         else:
             return False
         return True
+
+    @contextmanager
+    def in_step(self, step):
+        self.current_context = self.STEP, step
+        yield
+
+        self.alert(self.INFO, "{type} {text}".format(**step))
+
+        self.current_context = None
 
     def alert(self, level, body):
         pass
