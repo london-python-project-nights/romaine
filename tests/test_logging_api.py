@@ -1,10 +1,10 @@
 """
 We want a logger on the core, and the core should have methods to print out:
 
-    [ ] Error for an unimplemented step
+    [x] Error for an unimplemented step
+    [ ] Error for step failure
     [ ] Info for a running step
     [ ] Info for step success
-    [ ] Error for step failure
     [ ] Warning for step skipped
     [ ] Run statistics
     [ ]     Total number of Features, Scenarios, Steps
@@ -27,6 +27,22 @@ from romaine import logging
 from romaine import exc
 
 
+def given_a_test_step():
+    return {
+        'leading_comments_and_space': [],
+        'type': "Given",
+        'text': "a test step",
+        'multiline_arg': None,
+        'trailing_whitespace': [],
+    }
+
+
+def true_for_one_call(mock_fn, predicate):
+    for (args, kwargs) in mock_fn.call_args_list:
+        if predicate(*args, **kwargs):
+            return True
+    return False
+
 
 class TestLoggingAPI(unittest.TestCase):
 
@@ -42,38 +58,44 @@ class TestLoggingAPI(unittest.TestCase):
 
     @mock.patch('romaine.logging.RomaineLogger.alert')
     def test_unimplemented_step_error(self, mock_alert):
-        # Todo - test that UnimplementedStepException contains step info
-
-        # Given a logger context
+        # Given a test step
+        step = given_a_test_step()
+        # And a logger context
         with logging.RomaineLogger():
-            # When I raise an error for a missing feature step implementation
-            raise exc.UnimplementedStepError
-        # Then the logger alerts with an error
-        assert mock_alert.called
+            # When I raise an error for the step not being implemented
+            raise exc.UnimplementedStepError(step)
 
-        for (args, kwargs) in mock_alert.call_args_list:
-            level, body = args
+        # Then the logger alerts with an error
+        def predicate(level, body):
             if level is logging.RomaineLogger.ERROR:
-                break
-        else:
-            raise RuntimeError("No error found in alert calls!")
+                exc_type, exc_val, exc_tb = body
+                # And the error alert contains the step dictionary
+                return getattr(exc_val, 'step') == step
+
+        assert true_for_one_call(mock_alert, predicate),\
+            "No error found in alert calls!"
 
     @mock.patch('romaine.logging.RomaineLogger.alert')
     def test_unimplemented_step_stub(self, mock_alert):
 
-        # Todo - work out what we want to do with this info
-
-        # Given a logger context
+        expected = (
+            "@Given('a test step')\n"
+            "def given_a_test_step():\n"
+            "    raise NotImplementedError"
+        )
+        # Given a test step
+        step = given_a_test_step()
+        # And a logger context
         with logging.RomaineLogger():
-            # When I raise an error for a missing feature step implementation
-            raise exc.UnimplementedStepError
-        # Then the logger alerts with information
-        assert mock_alert.called
+            # When I raise an error for the step not being implemented
+            raise exc.UnimplementedStepError(step)
 
-        for (args, kwargs) in mock_alert.call_args_list:
-            level, body = args
+        # Then the logger alerts with information
+        def predicate(level, body):
             if level is logging.RomaineLogger.INFO:
-                break
-        else:
-            raise RuntimeError("No info found in alert calls!")
+                # And the info alert contains a stub for the step
+                return body == expected
+
+        assert true_for_one_call(mock_alert, predicate),\
+            "No stub found in alert calls!"
 

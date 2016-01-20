@@ -1,4 +1,5 @@
 
 
 class UnimplementedStepError(Exception):
-    pass
+    def __init__(self, step):
+        self.step = step
