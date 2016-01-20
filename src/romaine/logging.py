@@ -1,3 +1,4 @@
+import sys
 from contextlib import contextmanager
 
 from romaine import exc
@@ -52,6 +53,10 @@ class RomaineLogger(object):
             yield
         except exc.SkipTest:
             self.alert(self.WARNING, "{type} {text} (skipped)".format(**step))
+        except Exception as ex:
+            self.alert(self.ERROR, "{type} {text}".format(**step))
+            self.alert(self.ERROR, sys.exc_info())
+
         else:
             self.alert(self.INFO, "{type} {text}".format(**step))
 

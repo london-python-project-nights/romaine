@@ -3,10 +3,10 @@ We want a logger on the core, and the core should have methods to print out:
 
     [x] Error for an unimplemented step
 
-    [ ] Info for a finished step
+    [x] Info for a finished step
     [x]     Info for step success
     [x]     Warning for step skipped
-    [ ]     Error for step failure
+    [x]     Error for step failure
 
     [ ] Run statistics
     [ ]     Total number of Features, Scenarios, Steps
@@ -71,9 +71,12 @@ class TestLoggingAPIUnimplementedStep(unittest.TestCase):
         # Then the logger alerts with an error
         def predicate(level, body):
             if level is logging.RomaineLogger.ERROR:
-                exc_type, exc_val, exc_tb = body
-                # And the error alert contains the step dictionary
-                return getattr(exc_val, 'step') == step
+                try:
+                    exc_type, exc_val, exc_tb = body
+                    # And the error alert contains the step dictionary
+                    return getattr(exc_val, 'step') == step
+                except:
+                    return False
             return False
 
         assert true_for_one_call(mock_alert, predicate),\
@@ -156,19 +159,48 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
 
         ), "No step as text found in alert calls!"
 
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_failure(self, mock_alert):
 
-    # @mock.patch('romaine.logging.RomaineLogger.alert')
-    # def test_failure(self, mock_alert):
-    #
-    #     # Given a logger context
-    #     with logging.RomaineLogger():
-    #         # And a test step
-    #         step = given_a_test_step()
-    #         # When I enter the step context
-    #         # And I raise an exception
-    #         # And I exit the step context
-    #         # Then the logger alerts with an error
-    #         # And I expect to see the step as text
-    #         # And I expect to see the exception information
-    #
-    #     raise NotImplementedError
+        # Given a logger context
+        with logging.RomaineLogger() as logger:
+            # And a test step
+            step = given_a_test_step()
+            # When I enter the step context
+            with logger.in_step(step):
+                # And I raise an exception
+                expected_exception_object = RuntimeError("Boo!")
+
+                raise expected_exception_object
+
+                # And I exit the step context
+
+        # Then the logger alerts with an error with the step as text
+        assert true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logging.RomaineLogger.ERROR) and
+                (body == "Given a test step")
+            )
+
+        ), "No step as text found in alert calls!"
+
+        def is_correct_exception(body):
+            try:
+                exc_type, exc_val, exc_tb = body
+            except:
+                return False
+
+            return exc_val is expected_exception_object
+
+        # And the logger alerts with an error with the exception information
+        assert true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logging.RomaineLogger.ERROR) and
+                is_correct_exception(body)
+            )
+
+        ), "No exception information found in alert calls!"
