@@ -1,3 +1,4 @@
+from unittest import SkipTest
 
 
 class UnimplementedStepError(Exception):

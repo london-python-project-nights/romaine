@@ -47,9 +47,13 @@ class RomaineLogger(object):
     @contextmanager
     def in_step(self, step):
         self.current_context = self.STEP, step
-        yield
 
-        self.alert(self.INFO, "{type} {text}".format(**step))
+        try:
+            yield
+        except exc.SkipTest:
+            self.alert(self.WARNING, "{type} {text} (skipped)".format(**step))
+        else:
+            self.alert(self.INFO, "{type} {text}".format(**step))
 
         self.current_context = None
 

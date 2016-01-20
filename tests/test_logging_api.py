@@ -5,7 +5,7 @@ We want a logger on the core, and the core should have methods to print out:
 
     [ ] Info for a finished step
     [x]     Info for step success
-    [ ]     Warning for step skipped
+    [x]     Warning for step skipped
     [ ]     Error for step failure
 
     [ ] Run statistics
@@ -131,21 +131,32 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
 
         ), "No step as text found in alert calls!"
 
-    # @mock.patch('romaine.logging.RomaineLogger.alert')
-    # def test_skipping(self, mock_alert):
-    #
-    #     # Given a logger context
-    #     with logging.RomaineLogger():
-    #         # And a test step
-    #         step = given_a_test_step()
-    #         # When I enter the step context
-    #         # And I raise a skip exception
-    #         # And I exit the step context
-    #         # Then the logger alerts with a warning
-    #         # And I expect to see the step as text
-    #
-    #     raise NotImplementedError
-    #
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_skipping(self, mock_alert):
+
+        # Given a logger context
+        with logging.RomaineLogger() as logger:
+            # And a test step
+            step = given_a_test_step()
+            # When I enter the step context
+            with logger.in_step(step):
+                # And I raise a skip exception
+                raise exc.SkipTest
+
+                # And I exit the step context
+
+        # Then the logger alerts with a warning with the step as text
+        assert true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logging.RomaineLogger.WARNING) and
+                (body == "Given a test step (skipped)")
+            )
+
+        ), "No step as text found in alert calls!"
+
+
     # @mock.patch('romaine.logging.RomaineLogger.alert')
     # def test_failure(self, mock_alert):
     #
