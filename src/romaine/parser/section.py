@@ -89,6 +89,7 @@ class SectionParser(object):
                 results['example'] = {
                     'description': description,
                     'columns': columns,
+                    'table': table,
                     'leading_comments_and_space': leading_comments_and_space,
                     'trailing_whitespace': trailing_space,
                 }

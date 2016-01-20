@@ -82,6 +82,32 @@ class RomaineLogger(object):
             self._scenario_outline = None
 
     @contextmanager
+    def in_scenario_outline_example(self, scenario_outline_example):
+        self._scenario_outline_example = scenario_outline_example
+        self._scenario_outline_example_row_index = 0
+
+        headings = scenario_outline_example['table'][0]
+        heading_row = "|".join(headings)
+
+        self.alert(
+            self.INFO,
+            "Example:{description}\n"
+            "    |{heading_row}|"
+            .format(heading_row=heading_row, **scenario_outline_example)
+        )
+
+        try:
+            yield
+        finally:
+            del self._scenario_outline_example_row_index
+            self._scenario_outline = None
+
+    @contextmanager
+    def in_scenario_outline_example_row(self, row):
+        self.alert(self.INFO, "    |{}|".format("|".join(row)))
+        yield
+
+    @contextmanager
     def in_feature(self, feature):
         self._feature = feature
         self.alert(self.INFO, "\n".join(feature["header"]))

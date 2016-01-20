@@ -13,9 +13,9 @@ We want a logger on the core, and the core should have methods to print out:
     [x] Info for a starting feature
 
     [ ] Info for a scenario outline example:
-    [ ]     Info: example success
-    [ ]     Warning: example skipped
-    [ ]     Error: example failure
+    [x]     Info: example row success
+    [ ]     Warning: example row skipped
+    [ ]     Error: example row failure
 
     [ ] Run statistics
     [ ]     Info: Total number of Features, Scenarios, Steps
@@ -38,7 +38,10 @@ We want a logger on the core, and the core should have methods to print out:
 """
 import unittest
 
-from unittest import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from romaine import logging
 from romaine import exc
@@ -88,8 +91,8 @@ def given_a_test_scenario_outline():
     """
     Scenario Outline: Test Scenario Outline
     Examples: Test Example
-        | num | word  |
-        | 1   | one   |
+        | num | word |
+        | 1   | one  |
     """
     return {
         'leading_comments_and_space': [],
@@ -103,6 +106,10 @@ def given_a_test_scenario_outline():
                 "num": ["1"],
                 "word": ["one"],
             },
+            'table': [
+                [" num ", " word "],
+                [" 1   ", " one  "]
+            ],
             'leading_comments_and_space': [],
             'trailing_whitespace': [],
         }],
@@ -316,16 +323,20 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
                 # Then the logger alerts with information with the scenario
                 # outline as text
                 passed = true_for_one_call(
-                    mock_alert,
+                        mock_alert,
 
-                    lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
-                        (body == "Scenario Outline: Test Scenario Outline")
-                    )
+                        lambda level, body: (
+                            (level is logging.RomaineLogger.INFO) and
+                            (body == "Scenario Outline: Test Scenario Outline")
+                        )
 
                 )
 
         assert passed, "No scenario outline as text found in alert calls!"
+
+        # Todo: print steps
+        # This needs to be done here for the examples to make sense
+        raise NotImplementedError
 
 
 class TestLoggingAPIStartFeature(unittest.TestCase):
@@ -336,12 +347,12 @@ class TestLoggingAPIStartFeature(unittest.TestCase):
         # Given a logger context
         with logging.RomaineLogger() as logger:
 
-            # And a test scenario outline
+            # And a test feature
             feature = given_a_feature()
-            # When I enter the scenario outline context
+            # When I enter the feature context
             with logger.in_feature(feature):
-                # Then the logger alerts with information with the scenario
-                # outline as text
+                # Then the logger alerts with information with the feature as
+                # text
                 passed = true_for_one_call(
                     mock_alert,
 
@@ -352,4 +363,88 @@ class TestLoggingAPIStartFeature(unittest.TestCase):
 
                 )
 
-        assert passed, "No scenario outline as text found in alert calls!"
+        assert passed, "No feature as text found in alert calls!"
+
+
+class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
+
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_success(self, mock_alert):
+
+        # Given a test scenario outline
+        outline = given_a_test_scenario_outline()
+        # And a logger context
+        with logging.RomaineLogger() as logger:
+            # When I enter the first outline example context
+            example = outline['examples'][0]
+            with logger.in_scenario_outline_example(example):
+                # And I enter the first row's context
+                row = example['table'][1]
+                with logger.in_scenario_outline_example_row(row):
+                    # And I exit the first row's context
+                    pass
+                # And I exit the first outline example context
+                pass
+        # Then the logger alerts with information with the scenario
+        # outline example row as text
+        assert true_for_one_call(
+                mock_alert,
+
+                lambda level, body: (
+                    (level is logging.RomaineLogger.INFO) and
+                    (body == "    | 1   | one  |")
+                )
+
+        )
+
+    @mock.patch('romaine.logging.RomaineLogger.alert')
+    def test_skip(self, mock_alert):
+
+        # Given a test scenario outline
+        outline = given_a_test_scenario_outline()
+        # And a logger context
+        with logging.RomaineLogger() as logger:
+            # When I enter the first outline example context
+            example = outline['examples'][0]
+            with logger.in_scenario_outline_example(example):
+                # And I enter the first row's context
+                row = example['table'][1]
+                with logger.in_scenario_outline_example_row(row):
+                    # And I exit the first row's context
+                    pass
+                # And I exit the first outline example context
+                pass
+        # Then the logger alerts with information with the scenario
+        # outline example row as text
+        assert true_for_one_call(
+                mock_alert,
+
+                lambda level, body: (
+                    (level is logging.RomaineLogger.INFO) and
+                    (body == "    | 1   | one  |")
+                )
+
+        )
+
+    # @mock.patch('romaine.logging.RomaineLogger.alert')
+    # def test_error(self, mock_alert):
+    #     # Given a test scenario outline
+    #     step = given_a_test_scenario_outline()
+    #     # And a logger context
+    #     with logging.RomaineLogger():
+    #         # When I raise an error for the step not being implemented
+    #         raise exc.UnimplementedStepError(step)
+    #
+    #     # Then the logger alerts with an error
+    #     def predicate(level, body):
+    #         if level is logging.RomaineLogger.ERROR:
+    #             try:
+    #                 exc_type, exc_val, exc_tb = body
+    #                 # And the error alert contains the step dictionary
+    #                 return getattr(exc_val, 'step') == step
+    #             except:
+    #                 return False
+    #         return False
+    #
+    #     assert true_for_one_call(mock_alert, predicate),\
+    #         "No error found in alert calls!"
