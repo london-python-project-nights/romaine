@@ -22,9 +22,9 @@ def test_step_to_stub(step):
 
 class RomaineLogger(object):
 
-    INFO = object()
-    WARNING = object()
-    ERROR = object()
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
 
     def __init__(self):
         self._feature = None
@@ -41,10 +41,10 @@ class RomaineLogger(object):
             self.alert(self.ERROR, (exc_type, exc_val, exc_tb))
             stub = test_step_to_stub(exc_val.step)
             self.alert(self.INFO, stub)
-        elif isinstance(exc_val, Exception):
+        elif isinstance(exc_val, AssertionError):
             self.alert(self.ERROR, (exc_type, exc_val, exc_tb))
         else:
-            return False
+            return
         return True
 
     @contextmanager
@@ -54,7 +54,7 @@ class RomaineLogger(object):
             yield
         except exc.SkipTest:
             self.alert(self.WARNING, "{type} {text} (skipped)".format(**step))
-        except Exception as ex:
+        except AssertionError:
             self.alert(self.ERROR, "{type} {text}".format(**step))
             self.alert(self.ERROR, sys.exc_info())
         else:

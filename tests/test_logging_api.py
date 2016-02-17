@@ -90,6 +90,8 @@ def given_a_feature():
 def given_a_test_scenario_outline():
     """
     Scenario Outline: Test Scenario Outline
+        Given a number <num>
+        Then I expect a word <word>
     Examples: Test Example
         | num | word |
         | 1   | one  |
@@ -99,7 +101,22 @@ def given_a_test_scenario_outline():
         'type': 'scenario outline',
         'tags': [],
         'description': ' Test Scenario Outline',
-        'steps': [],
+        'steps': [
+            {
+                'leading_comments_and_space': ["    "],
+                'type': "Given",
+                'text': "a number <num>",
+                'multiline_arg': None,
+                'trailing_whitespace': [],
+            },
+            {
+                'leading_comments_and_space': ["    "],
+                'type': "Then",
+                'text': "I expect word <word>",
+                'multiline_arg': None,
+                'trailing_whitespace': [],
+            },
+        ],
         'examples': [{
             'description': ' Test Example',
             'columns': {
@@ -237,6 +254,7 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
 
     @mock.patch('romaine.logging.RomaineLogger.alert')
     def test_failure(self, mock_alert):
+        assertion_message = "Step failed!"
 
         # Given a logger context
         with logging.RomaineLogger() as logger:
@@ -244,10 +262,8 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
             step = given_a_test_step()
             # When I enter the step context
             with logger.in_step(step):
-                # And I raise an exception
-                expected_exception_object = RuntimeError("Boo!")
-
-                raise expected_exception_object
+                # And I fail an assertion
+                assert False, assertion_message
 
                 # And I exit the step context
 
@@ -268,7 +284,10 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
             except:
                 return False
 
-            return exc_val is expected_exception_object
+            return (
+                isinstance(exc_val, AssertionError) and
+                exc_val.args[0] == assertion_message
+            )
 
         # And the logger alerts with an error with the exception information
         assert true_for_one_call(
@@ -322,7 +341,7 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
             with logger.in_scenario_outline(scenario):
                 # Then the logger alerts with information with the scenario
                 # outline as text
-                passed = true_for_one_call(
+                assert true_for_one_call(
                         mock_alert,
 
                         lambda level, body: (
@@ -330,13 +349,29 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
                             (body == "Scenario Outline: Test Scenario Outline")
                         )
 
-                )
+                ), "No scenario outline as text found in alert calls!"
 
-        assert passed, "No scenario outline as text found in alert calls!"
 
-        # Todo: print steps
-        # This needs to be done here for the examples to make sense
-        raise NotImplementedError
+                # Then the logger alerts with information with the scenario
+                # outline's steps as text
+                assert true_for_one_call(
+                        mock_alert,
+
+                        lambda level, body: (
+                            (level is logging.RomaineLogger.INFO) and
+                            (body == "    Given a number <num>")
+                        )
+
+                ), "No 'Given' step found in alert calls!"
+                assert true_for_one_call(
+                        mock_alert,
+
+                        lambda level, body: (
+                            (level is logging.RomaineLogger.INFO) and
+                            (body == "    Then I expect a word <word>")
+                        )
+
+                ), "No 'Then' step found in alert calls!"
 
 
 class TestLoggingAPIStartFeature(unittest.TestCase):
