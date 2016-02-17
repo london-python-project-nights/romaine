@@ -1,4 +1,6 @@
+from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
+import logging
 
 from romaine import exc
 
@@ -32,11 +34,12 @@ def fill_step_with_example_row(step, row):
     return step
 
 
-class RomaineLogger(object):
+class AbstractRomaineLogger(object):
+    __metaclass__ = ABCMeta
 
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
+    INFO = logging.INFO
+    WARNING = logging.WARNING
+    ERROR = logging.ERROR
 
     def __init__(self):
         self._feature = None
@@ -49,17 +52,27 @@ class RomaineLogger(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(exc_val, exc.UnimplementedStepError):
-            self.alert(self.ERROR, (exc_type, exc_val, exc_tb))
-            stub = test_step_to_stub(exc_val.step)
-            self.alert(self.INFO, stub)
-        elif isinstance(exc_val, AssertionError):
-            self.alert(self.ERROR, (exc_type, exc_val, exc_tb))
-        elif isinstance(exc_val, exc.SkipTest):
-            pass
-        else:
-            return
-        return True
+        """
+        We want to make sure that any exceptions thrown are logged,
+        unless it's a SkipTest which will have already been warned
+        about.
+
+        We also want to mark SkipTest, UnimplementedStepError, and
+        AssertionError as having been handled so they don't abort the
+        test run. Any other exception will be logged, but not handled.
+        """
+        if exc_val is not None:
+            if isinstance(exc_val, exc.SkipTest):
+                return True
+            else:
+                self.alert(self.ERROR, exc_info=(exc_type, exc_val, exc_tb))
+
+            if isinstance(exc_val, exc.UnimplementedStepError):
+                stub = test_step_to_stub(exc_val.step)
+                self.alert(self.INFO, stub)
+                return True
+            elif isinstance(exc_val, AssertionError):
+                return True
 
     @contextmanager
     def in_step(self, step, verbose=True):
@@ -144,5 +157,26 @@ class RomaineLogger(object):
         finally:
             self._feature = None
 
-    def alert(self, level, body):
+    @abstractmethod
+    def alert(self, level, body='', exc_info=False):
         pass
+
+
+class RomaineLogger(AbstractRomaineLogger):
+
+    def __init__(self):
+        super(RomaineLogger, self).__init__()
+        self._stdlib_logger = logging.Logger(str(self))
+
+        self._levels = {
+            self.INFO: self._stdlib_logger.info,
+            self.WARNING: self._stdlib_logger.warning,
+            self.ERROR: self._stdlib_logger.error,
+        }
+
+    def alert(self, level, body='', exc_info=False):
+
+        if level not in self._levels:
+            raise NotImplementedError
+
+        self._levels[level](body, exc_info=exc_info)

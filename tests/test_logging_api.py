@@ -31,15 +31,16 @@ We want a logger on the core, and the core should have methods to print out:
     [ ]     Debug: Asked to run step with string by feature , selected step
     [ ]     Warn: Empty feature files
 
-    [ ] Alert method actually does something
-    [ ]     Levels: logs to logging.Logger with appropriate log levels
-    [ ]     Text: can log text
-    [ ]     Exceptions: can log an exception given (exc_type, exc_val, exc_tb)
+    [x] Alert method actually does something
+    [x]     Levels: logs to logging.Logger with appropriate log levels
+    [x]     Text: can log text
+    [x]     Exceptions: can log an exception given (exc_type, exc_val, exc_tb)
 
     [ ] Change scenario output example format to match the logger's
         expected input
 
 """
+import logging.handlers
 import unittest
 
 try:
@@ -47,8 +48,16 @@ try:
 except ImportError:
     import mock
 
-from romaine import logging
+from romaine import logs
 from romaine import exc
+
+
+class TestRomaineLogger(logs.RomaineLogger):
+    def __init__(self):
+        super(TestRomaineLogger, self).__init__()
+        handler = logging.handlers.BufferingHandler(float('inf'))
+        self._stdlib_logger.addHandler(handler)
+        self.records = handler.buffer
 
 
 def given_a_test_step():
@@ -145,30 +154,30 @@ def true_for_one_call(mock_fn, predicate):
 
 class TestLoggingAPIUnimplementedStep(unittest.TestCase):
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_nothing_logged(self, mock_alert):
 
         # Given a logger context
-        with logging.RomaineLogger():
+        with logs.RomaineLogger():
             # When I don't use the logger
             pass
         # Then the logger does not alert
         assert not mock_alert.called
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_error(self, mock_alert):
         # Given a test step
         step = given_a_test_step()
         # And a logger context
-        with logging.RomaineLogger():
+        with logs.RomaineLogger():
             # When I raise an error for the step not being implemented
             raise exc.UnimplementedStepError(step)
 
         # Then the logger alerts with an error
-        def predicate(level, body):
-            if level is logging.RomaineLogger.ERROR:
+        def predicate(level, body='', exc_info=False):
+            if level is logs.RomaineLogger.ERROR:
                 try:
-                    exc_type, exc_val, exc_tb = body
+                    exc_type, exc_val, exc_tb = exc_info
                     # And the error alert contains the step dictionary
                     return getattr(exc_val, 'step') == step
                 except:
@@ -178,7 +187,7 @@ class TestLoggingAPIUnimplementedStep(unittest.TestCase):
         assert true_for_one_call(mock_alert, predicate),\
             "No error found in alert calls!"
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_stub(self, mock_alert):
 
         expected = (
@@ -189,7 +198,7 @@ class TestLoggingAPIUnimplementedStep(unittest.TestCase):
         # Given a test step
         step = given_a_test_step()
         # And a logger context
-        with logging.RomaineLogger():
+        with logs.RomaineLogger():
             # When I raise an error for the step not being implemented
             raise exc.UnimplementedStepError(step)
 
@@ -197,8 +206,8 @@ class TestLoggingAPIUnimplementedStep(unittest.TestCase):
         assert true_for_one_call(
             mock_alert,
 
-            lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+            lambda level, body='', exc_info=False: (
+                (level is logs.RomaineLogger.INFO) and
                 (body == expected)
             )
 
@@ -207,11 +216,11 @@ class TestLoggingAPIUnimplementedStep(unittest.TestCase):
 
 class TestLoggingAPIFinishedStep(unittest.TestCase):
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_success(self, mock_alert):
 
         # Given a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
             # And a test step
             step = given_a_test_step()
             # When I enter the step context
@@ -224,17 +233,17 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+                (level is logs.RomaineLogger.INFO) and
                 (body == "Given a test step")
             )
 
         ), "No step as text found in alert calls!"
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_skipping(self, mock_alert):
 
         # Given a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
             # And a test step
             step = given_a_test_step()
             # When I enter the step context
@@ -249,18 +258,18 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.WARNING) and
+                (level is logs.RomaineLogger.WARNING) and
                 (body == "Given a test step (skipped)")
             )
 
         ), "No step as text found in alert calls!"
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_failure(self, mock_alert):
         assertion_message = "Step failed!"
 
         # Given a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
             # And a test step
             step = given_a_test_step()
             # When I enter the step context
@@ -275,7 +284,7 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.ERROR) and
+                (level is logs.RomaineLogger.ERROR) and
                 (body == "Given a test step")
             )
 
@@ -296,9 +305,9 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
         assert true_for_one_call(
             mock_alert,
 
-            lambda level, body: (
-                (level is logging.RomaineLogger.ERROR) and
-                is_correct_exception(body)
+            lambda level, body='', exc_info=False: (
+                (level is logs.RomaineLogger.ERROR) and
+                is_correct_exception(exc_info)
             )
 
         ), "No exception information found in alert calls!"
@@ -306,11 +315,11 @@ class TestLoggingAPIFinishedStep(unittest.TestCase):
 
 class TestLoggingAPIStartScenario(unittest.TestCase):
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_start(self, mock_alert):
 
         # Given a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
 
             # And a test scenario
             scenario = given_a_test_scenario()
@@ -322,7 +331,7 @@ class TestLoggingAPIStartScenario(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         (body == "Scenario: Test Scenario")
                     )
 
@@ -333,11 +342,11 @@ class TestLoggingAPIStartScenario(unittest.TestCase):
 
 class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_start(self, mock_alert):
 
         # Given a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
 
             # And a test scenario outline
             scenario = given_a_test_scenario_outline()
@@ -349,7 +358,7 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         (body == "Scenario Outline: Test Scenario Outline")
                     )
                 ), "No scenario outline as text found in alert calls!"
@@ -360,7 +369,7 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         (body == "    Given a number <num>")
                     )
                 ), "No 'Given' step found in alert calls!"
@@ -368,7 +377,7 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         (body == "    Then I expect a word <word>")
                     )
                 ), "No 'Then' step found in alert calls!"
@@ -376,11 +385,11 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
 
 class TestLoggingAPIStartFeature(unittest.TestCase):
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_start(self, mock_alert):
 
         # Given a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
 
             # And a test feature
             feature = given_a_feature()
@@ -392,7 +401,7 @@ class TestLoggingAPIStartFeature(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         (body == "Feature: Test Feature")
                     )
 
@@ -403,13 +412,13 @@ class TestLoggingAPIStartFeature(unittest.TestCase):
 
 class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_success(self, mock_alert):
 
         # Given a test scenario outline
         outline = given_a_test_scenario_outline()
         # And a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
             # When I enter the first outline example context
             example = outline['examples'][0]
             with logger.in_scenario_outline_example(example):
@@ -419,7 +428,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         ("Test Example" in body)
                     )
                 ): raise RuntimeError
@@ -427,7 +436,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
                     mock_alert,
 
                     lambda level, body: (
-                        (level is logging.RomaineLogger.INFO) and
+                        (level is logs.RomaineLogger.INFO) and
                         ("    | num | word |" in body)
                     )
                 ): raise RuntimeError
@@ -445,19 +454,19 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+                (level is logs.RomaineLogger.INFO) and
                 (body == "    | 1   | one  |")
             )
 
         )
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_skip(self, mock_alert):
 
         # Given a test scenario outline
         outline = given_a_test_scenario_outline()
         # And a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
             # When I enter the first outline example context
             example = outline['examples'][0]
             with logger.in_scenario_outline_example(example):
@@ -466,7 +475,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
                 row = example['table'][1]
                 with logger.in_scenario_outline_example_row(row):
                     # And I enter the first step's context
-                    step = logging.fill_step_with_example_row(
+                    step = logs.fill_step_with_example_row(
                         outline["steps"][0],
                         example["hashes"][0]
                     )
@@ -480,7 +489,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+                (level is logs.RomaineLogger.INFO) and
                 ("Test Example" in body)
             )
         )
@@ -488,7 +497,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+                (level is logs.RomaineLogger.INFO) and
                 ("    | num | word |" in body)
             )
         )
@@ -498,7 +507,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.WARNING) and
+                (level is logs.RomaineLogger.WARNING) and
                 (body == "    | 1   | one  | (skipped)")
             )
 
@@ -509,19 +518,19 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.WARNING) and
+                (level is logs.RomaineLogger.WARNING) and
                 (body == "Given a number 1 (skipped)")
             )
 
         ), "No step as text found in alert calls!"
 
-    @mock.patch('romaine.logging.RomaineLogger.alert')
+    @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_error(self, mock_alert):
 
         # Given a test scenario outline
         outline = given_a_test_scenario_outline()
         # And a logger context
-        with logging.RomaineLogger() as logger:
+        with logs.RomaineLogger() as logger:
             # When I enter the first outline example context
             example = outline['examples'][0]
             with logger.in_scenario_outline_example(example):
@@ -530,7 +539,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
                 row = example['table'][1]
                 with logger.in_scenario_outline_example_row(row):
                     # And I enter the first step's context
-                    step = logging.fill_step_with_example_row(
+                    step = logs.fill_step_with_example_row(
                         outline["steps"][0],
                         example["hashes"][0]
                     )
@@ -544,7 +553,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+                (level is logs.RomaineLogger.INFO) and
                 ("Test Example" in body)
             )
         )
@@ -552,7 +561,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.INFO) and
+                (level is logs.RomaineLogger.INFO) and
                 ("    | num | word |" in body)
             )
         )
@@ -562,7 +571,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.ERROR) and
+                (level is logs.RomaineLogger.ERROR) and
                 (body == "    | 1   | one  |")
             )
 
@@ -573,8 +582,91 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             mock_alert,
 
             lambda level, body: (
-                (level is logging.RomaineLogger.ERROR) and
+                (level is logs.RomaineLogger.ERROR) and
                 (body == "Given a number 1")
             )
 
         ), "No step as text found in alert calls!"
+
+
+class TestLoggingAPIAlertMethod(unittest.TestCase):
+
+    def _test_log_level_text(self, level_in, message, level_out):
+        # Given a logger context
+        with TestRomaineLogger() as logger:
+            # When I output an <level_in> message
+            logger.alert(level_in, message)
+        # Then I see a <level_out> message from the std library logger
+
+        for record in logger.records:
+            if record.levelno == level_out and record.msg == message:
+                return
+
+        assert not logger.records, "No matching record found"
+
+    def test_info(self):
+        self._test_log_level_text(
+            level_in=TestRomaineLogger.INFO,
+            message="Hello, World!",
+            level_out=logging.INFO,
+        )
+
+    def test_warn(self):
+        self._test_log_level_text(
+            level_in=TestRomaineLogger.WARNING,
+            message="Hello, World!",
+            level_out=logging.WARNING,
+        )
+
+    def test_error(self):
+        self._test_log_level_text(
+            level_in=TestRomaineLogger.ERROR,
+            message="Hello, World!",
+            level_out=logging.ERROR,
+        )
+
+    def test_record_assertions(self):
+        message = "Woops!"
+
+        # Given a logger context
+        with TestRomaineLogger() as logger:
+            # When I raise an assertion
+            assert False, message
+        # Then I see a ERROR message from the std library logger with the
+        # traceback attached
+
+        for record in logger.records:
+            if all((
+                record.levelno == logging.ERROR,
+                record.exc_info,
+                isinstance(record.exc_info[1], AssertionError),
+                record.exc_info[1].args[0] == message
+            )):
+                return
+
+        assert not logger.records, "No matching record found"
+
+    def test_record_runtime_error(self):
+        message = "Woops!"
+        exc_type = RuntimeError
+
+        try:
+            # Given a logger context
+            with TestRomaineLogger() as logger:
+                # When I raise an assertion
+                raise exc_type(message)
+        except exc_type:
+            pass
+
+        # Then I see a ERROR message from the std library logger with the
+        # traceback attached
+        for record in logger.records:
+            if all((
+                    record.levelno == logging.ERROR,
+                    record.exc_info,
+                    isinstance(record.exc_info[1], exc_type),
+                    record.exc_info[1].args[0] == message
+            )):
+                return
+
+        assert False, "No matching record found"
