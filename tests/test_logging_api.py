@@ -36,6 +36,9 @@ We want a logger on the core, and the core should have methods to print out:
     [ ]     Text: can log text
     [ ]     Exceptions: can log an exception given (exc_type, exc_val, exc_tb)
 
+    [ ] Change scenario output example format to match the logger's
+        expected input
+
 """
 import unittest
 
