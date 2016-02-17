@@ -1,4 +1,3 @@
-import sys
 from contextlib import contextmanager
 
 from romaine import exc
@@ -72,7 +71,7 @@ class RomaineLogger(object):
             raise
         except AssertionError:
             self.alert(self.ERROR, "{type} {text}".format(**step))
-            self.alert(self.ERROR, sys.exc_info())
+            raise
         else:
             self.alert(self.INFO if verbose else self.WARNING,
                        "{type} {text}".format(**step))
@@ -131,6 +130,10 @@ class RomaineLogger(object):
         except exc.SkipTest:
             self.alert(self.WARNING,
                        "    |{}| (skipped)".format("|".join(row)))
+        except AssertionError:
+            self.alert(self.ERROR,
+                       "    |{}|".format("|".join(row)))
+            raise
 
     @contextmanager
     def in_feature(self, feature):
