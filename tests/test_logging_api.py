@@ -351,8 +351,7 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
 
                 ), "No scenario outline as text found in alert calls!"
 
-
-                # Then the logger alerts with information with the scenario
+                # And the logger alerts with information with the scenario
                 # outline's steps as text
                 assert true_for_one_call(
                         mock_alert,
@@ -413,7 +412,26 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             # When I enter the first outline example context
             example = outline['examples'][0]
             with logger.in_scenario_outline_example(example):
-                # And I enter the first row's context
+                # Then the logger alerts with information with the
+                # example table heading
+                if not true_for_one_call(
+                    mock_alert,
+
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        ("Test Example" in body)
+                    )
+                ): raise RuntimeError
+                if not true_for_one_call(
+                    mock_alert,
+
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        ("    | num | word |" in body)
+                    )
+                ): raise RuntimeError
+
+                # When I enter the first row's context
                 row = example['table'][1]
                 with logger.in_scenario_outline_example_row(row):
                     # And I exit the first row's context
