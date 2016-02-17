@@ -1,6 +1,5 @@
 # Add Skiptest to exc namespace for more obvious usage
-# noinspection PyUnresolvedReferences
-from unittest import SkipTest
+from unittest import SkipTest  # NOQA
 
 
 class UnimplementedStepError(Exception):

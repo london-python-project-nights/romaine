@@ -175,6 +175,10 @@ class TestElementsParser(unittest.TestCase):
                                         'back cover',
                                     ],
                                 },
+                                'table': [
+                                    ['book', 'location'],
+                                    ['paperback', 'back cover'],
+                                ],
                                 'trailing_whitespace': [],
                             },
                         ],
@@ -278,6 +282,10 @@ class TestElementsParser(unittest.TestCase):
                                         'back cover',
                                     ],
                                 },
+                                'table': [
+                                    ['book', 'location'],
+                                    ['paperback', 'back cover'],
+                                ],
                                 'trailing_whitespace': [],
                             },
                         ],
@@ -453,6 +461,10 @@ class TestElementsParser(unittest.TestCase):
                                     ],
                                 },
                                 'trailing_whitespace': [],
+                                'table': [
+                                    ['book', 'location'],
+                                    ['paperback', 'back cover'],
+                                ],
                             },
                         ],
                         'steps': [

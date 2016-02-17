@@ -14,7 +14,7 @@ We want a logger on the core, and the core should have methods to print out:
 
     [ ] Info for a scenario outline example:
     [x]     Info: example row success
-    [ ]     Warning: example row skipped
+    [x]     Warning: example row skipped
     [ ]     Error: example row failure
 
     [ ] Run statistics
@@ -25,7 +25,8 @@ We want a logger on the core, and the core should have methods to print out:
     [ ]     Debug: Duration of each Feature, Scenario, Step (debug)
 
     [ ] Some debug level output for the feature/step finding:
-    [ ]     Debug: Searching for features in , found , are acceptable as features.
+    [ ]     Debug: Searching for features in , found , are acceptable as
+                   features.
     [ ]     Debug: Obtained steps from .
     [ ]     Debug: Asked to run step with string by feature , selected step
     [ ]     Warn: Empty feature files
@@ -119,10 +120,9 @@ def given_a_test_scenario_outline():
         ],
         'examples': [{
             'description': ' Test Example',
-            'columns': {
-                "num": ["1"],
-                "word": ["one"],
-            },
+            'hashes': [
+                {"num": "1", "word": "one"}
+            ],
             'table': [
                 [" num ", " word "],
                 [" 1   ", " one  "]
@@ -313,7 +313,8 @@ class TestLoggingAPIStartScenario(unittest.TestCase):
             scenario = given_a_test_scenario()
             # When I enter the scenario context
             with logger.in_scenario(scenario):
-                # Then the logger alerts with information with the scenario as text
+                # Then the logger alerts with information with the
+                # scenario as text
                 passed = true_for_one_call(
                     mock_alert,
 
@@ -342,34 +343,31 @@ class TestLoggingAPIStartScenarioOutline(unittest.TestCase):
                 # Then the logger alerts with information with the scenario
                 # outline as text
                 assert true_for_one_call(
-                        mock_alert,
+                    mock_alert,
 
-                        lambda level, body: (
-                            (level is logging.RomaineLogger.INFO) and
-                            (body == "Scenario Outline: Test Scenario Outline")
-                        )
-
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        (body == "Scenario Outline: Test Scenario Outline")
+                    )
                 ), "No scenario outline as text found in alert calls!"
 
                 # And the logger alerts with information with the scenario
                 # outline's steps as text
                 assert true_for_one_call(
-                        mock_alert,
+                    mock_alert,
 
-                        lambda level, body: (
-                            (level is logging.RomaineLogger.INFO) and
-                            (body == "    Given a number <num>")
-                        )
-
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        (body == "    Given a number <num>")
+                    )
                 ), "No 'Given' step found in alert calls!"
                 assert true_for_one_call(
-                        mock_alert,
+                    mock_alert,
 
-                        lambda level, body: (
-                            (level is logging.RomaineLogger.INFO) and
-                            (body == "    Then I expect a word <word>")
-                        )
-
+                    lambda level, body: (
+                        (level is logging.RomaineLogger.INFO) and
+                        (body == "    Then I expect a word <word>")
+                    )
                 ), "No 'Then' step found in alert calls!"
 
 
@@ -441,12 +439,12 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
         # Then the logger alerts with information with the scenario
         # outline example row as text
         assert true_for_one_call(
-                mock_alert,
+            mock_alert,
 
-                lambda level, body: (
-                    (level is logging.RomaineLogger.INFO) and
-                    (body == "    | 1   | one  |")
-                )
+            lambda level, body: (
+                (level is logging.RomaineLogger.INFO) and
+                (body == "    | 1   | one  |")
+            )
 
         )
 
@@ -460,24 +458,59 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
             # When I enter the first outline example context
             example = outline['examples'][0]
             with logger.in_scenario_outline_example(example):
-                # And I enter the first row's context
+
+                # When I enter the first row's context
                 row = example['table'][1]
                 with logger.in_scenario_outline_example_row(row):
-                    # And I exit the first row's context
-                    pass
-                # And I exit the first outline example context
-                pass
-        # Then the logger alerts with information with the scenario
+                    # And I enter the first step's context
+                    step = logging.fill_step_with_example_row(
+                        outline["steps"][0],
+                        example["hashes"][0]
+                    )
+                    # When I enter the step context
+                    with logger.in_step(step, verbose=False):
+                        # And I raise a skip exception
+                        raise exc.SkipTest
+        # Then the logger alerts with information with the
+        # example table heading
+        assert true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logging.RomaineLogger.INFO) and
+                ("Test Example" in body)
+            )
+        )
+        assert true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logging.RomaineLogger.INFO) and
+                ("    | num | word |" in body)
+            )
+        )
+        # And the logger alerts with a warning with the scenario
         # outline example row as text
         assert true_for_one_call(
-                mock_alert,
+            mock_alert,
 
-                lambda level, body: (
-                    (level is logging.RomaineLogger.INFO) and
-                    (body == "    | 1   | one  |")
-                )
+            lambda level, body: (
+                (level is logging.RomaineLogger.WARNING) and
+                (body == "    | 1   | one  | (skipped)")
+            )
 
         )
+
+        # And the logger alerts with a warning with the step as text
+        assert true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logging.RomaineLogger.WARNING) and
+                (body == "Given a number 1 (skipped)")
+            )
+
+        ), "No step as text found in alert calls!"
 
     # @mock.patch('romaine.logging.RomaineLogger.alert')
     # def test_error(self, mock_alert):

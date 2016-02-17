@@ -118,6 +118,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -279,6 +283,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -371,6 +379,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                             },
                             'trailing_whitespace': [
                                 '',
+                            ],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
                             ],
                         },
                     ],
@@ -473,6 +485,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                             'trailing_whitespace': [
                                 '',
                             ],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -550,6 +566,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [],
@@ -617,6 +637,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -710,6 +734,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -808,6 +836,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -912,6 +944,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                     ],
                     'steps': [
@@ -1068,6 +1104,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['paperback', 'back cover'],
+                            ],
                         },
                         {
                             'leading_comments_and_space': [],
@@ -1081,6 +1121,10 @@ class TestScenarioOutlinesParser(unittest.TestCase):
                                 ],
                             },
                             'trailing_whitespace': [],
+                            'table': [
+                                ['book', 'location'],
+                                ['hardback', 'inside of the front cover'],
+                            ],
                         },
                     ],
                     'steps': [

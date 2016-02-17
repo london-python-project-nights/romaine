@@ -20,6 +20,19 @@ def test_step_to_stub(step):
     ])
 
 
+# TODO - This should be in the runner, but that is not built yet
+def fill_step_with_example_row(step, row):
+    step_text = step['text']
+
+    for key, value in row.items():
+        step_text = step_text.replace("<{key}>".format(key=key), value)
+
+    step = step.copy()
+    step['text'] = step_text
+
+    return step
+
+
 class RomaineLogger(object):
 
     INFO = "INFO"
@@ -43,22 +56,26 @@ class RomaineLogger(object):
             self.alert(self.INFO, stub)
         elif isinstance(exc_val, AssertionError):
             self.alert(self.ERROR, (exc_type, exc_val, exc_tb))
+        elif isinstance(exc_val, exc.SkipTest):
+            pass
         else:
             return
         return True
 
     @contextmanager
-    def in_step(self, step):
+    def in_step(self, step, verbose=True):
         self._step = step
         try:
             yield
         except exc.SkipTest:
             self.alert(self.WARNING, "{type} {text} (skipped)".format(**step))
+            raise
         except AssertionError:
             self.alert(self.ERROR, "{type} {text}".format(**step))
             self.alert(self.ERROR, sys.exc_info())
         else:
-            self.alert(self.INFO, "{type} {text}".format(**step))
+            self.alert(self.INFO if verbose else self.WARNING,
+                       "{type} {text}".format(**step))
         finally:
             self._step = None
 
@@ -68,6 +85,8 @@ class RomaineLogger(object):
         self.alert(self.INFO, "Scenario:{description}".format(**scenario))
         try:
             yield
+        except exc.SkipTest:
+            pass
         finally:
             self._scenario = None
 
@@ -78,6 +97,8 @@ class RomaineLogger(object):
                    "Scenario Outline:{description}".format(**scenario_outline))
         try:
             yield
+        except exc.SkipTest:
+            pass
         finally:
             self._scenario_outline = None
 
@@ -105,7 +126,11 @@ class RomaineLogger(object):
     @contextmanager
     def in_scenario_outline_example_row(self, row):
         self.alert(self.INFO, "    |{}|".format("|".join(row)))
-        yield
+        try:
+            yield
+        except exc.SkipTest:
+            self.alert(self.WARNING,
+                       "    |{}| (skipped)".format("|".join(row)))
 
     @contextmanager
     def in_feature(self, feature):
