@@ -47,8 +47,26 @@ class AbstractRomaineLogger(object):
         self._scenario_outline = None
         self._scenario_outline_example = None
         self._step = None
+        self.statistics = None
 
     def __enter__(self):
+        self.statistics = {
+            "features": {
+                "total": 0,
+                "passed": 0,
+                "failed": 0,
+            },
+            "scenarios": {
+                "total": 0,
+                "passed": 0,
+                "failed": 0,
+            },
+            "steps": {
+                "total": 0,
+                "passed": 0,
+                "failed": 0,
+            },
+        }
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -61,18 +79,34 @@ class AbstractRomaineLogger(object):
         AssertionError as having been handled so they don't abort the
         test run. Any other exception will be logged, but not handled.
         """
+        handle = False
+
         if exc_val is not None:
             if isinstance(exc_val, exc.SkipTest):
-                return True
+                handle = True
             else:
                 self.alert(self.ERROR, exc_info=(exc_type, exc_val, exc_tb))
 
             if isinstance(exc_val, exc.UnimplementedStepError):
                 stub = test_step_to_stub(exc_val.step)
                 self.alert(self.INFO, stub)
-                return True
+                handle = True
             elif isinstance(exc_val, AssertionError):
-                return True
+                handle = True
+
+        for statistic_name in (
+            "features",
+            "scenarios",
+            "steps",
+        ):
+            statistic_value = self.statistics.get(statistic_name, {})
+            self.alert(self.INFO, "{} {}".format(
+                statistic_value.get("total"),
+                statistic_name,
+            ))
+
+        if handle:
+            return True
 
     @contextmanager
     def in_step(self, step, verbose=True):
@@ -89,6 +123,7 @@ class AbstractRomaineLogger(object):
             self.alert(self.INFO if verbose else self.WARNING,
                        "{type} {text}".format(**step))
         finally:
+            self.statistics["steps"]["total"] += 1
             self._step = None
 
     @contextmanager
@@ -100,6 +135,7 @@ class AbstractRomaineLogger(object):
         except exc.SkipTest:
             pass
         finally:
+            self.statistics["scenarios"]["total"] += 1
             self._scenario = None
 
     @contextmanager
@@ -126,7 +162,7 @@ class AbstractRomaineLogger(object):
             self.INFO,
             "Example:{description}\n"
             "    |{heading_row}|"
-            .format(heading_row=heading_row, **scenario_outline_example)
+                .format(heading_row=heading_row, **scenario_outline_example)
         )
 
         try:
@@ -147,6 +183,12 @@ class AbstractRomaineLogger(object):
             self.alert(self.ERROR,
                        "    |{}|".format("|".join(row)))
             raise
+        finally:
+            self.statistics["scenarios"]["total"] += 1
+
+    @abstractmethod
+    def alert(self, level, body='', exc_info=False):
+        pass
 
     @contextmanager
     def in_feature(self, feature):
@@ -155,11 +197,8 @@ class AbstractRomaineLogger(object):
         try:
             yield
         finally:
+            self.statistics["features"]["total"] += 1
             self._feature = None
-
-    @abstractmethod
-    def alert(self, level, body='', exc_info=False):
-        pass
 
 
 class RomaineLogger(AbstractRomaineLogger):

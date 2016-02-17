@@ -18,26 +18,20 @@ We want a logger on the core, and the core should have methods to print out:
     [x]     Error: example row failure
 
     [ ] Run statistics
-    [ ]     Info: Total number of Features, Scenarios, Steps
+    [x]     Info: Total number of Features, Scenarios, Steps
     [ ]     Info: Number of passed Features, Scenarios, Steps
     [ ]     Info: Number of failed Features, Scenarios, Steps
     [ ]     Info: Number of skipped Features, Scenarios, Steps
+    [ ]     Info: Total number of Scenarios, Steps within parent
+    [ ]     Info: Number of passed Scenarios, Steps within parent
+    [ ]     Info: Number of failed Scenarios, Steps within parent
+    [ ]     Info: Number of skipped Scenarios, Steps within parent
     [ ]     Debug: Duration of each Feature, Scenario, Step (debug)
-
-    [ ] Some debug level output for the feature/step finding:
-    [ ]     Debug: Searching for features in , found , are acceptable as
-                   features.
-    [ ]     Debug: Obtained steps from .
-    [ ]     Debug: Asked to run step with string by feature , selected step
-    [ ]     Warn: Empty feature files
 
     [x] Alert method actually does something
     [x]     Levels: logs to logging.Logger with appropriate log levels
     [x]     Text: can log text
     [x]     Exceptions: can log an exception given (exc_type, exc_val, exc_tb)
-
-    [ ] Change scenario output example format to match the logger's
-        expected input
 
 """
 import logging.handlers
@@ -82,7 +76,7 @@ def given_a_test_scenario():
         'type': 'scenario',
         'tags': [],
         'description': ' Test Scenario',
-        'steps': [],
+        'steps': [given_a_test_step()],
     }
 
 
@@ -95,7 +89,10 @@ def given_a_feature():
         'tags': [],
         'background': None,
         'leading_space_and_comments': [],
-        'elements': [],
+        'elements': [
+            given_a_test_scenario_outline(),
+            given_a_test_scenario_outline(),
+        ],
         'trailing_space_and_comments': [],
     }
 
@@ -153,16 +150,6 @@ def true_for_one_call(mock_fn, predicate):
 
 
 class TestLoggingAPIUnimplementedStep(unittest.TestCase):
-
-    @mock.patch('romaine.logs.RomaineLogger.alert')
-    def test_nothing_logged(self, mock_alert):
-
-        # Given a logger context
-        with logs.RomaineLogger():
-            # When I don't use the logger
-            pass
-        # Then the logger does not alert
-        assert not mock_alert.called
 
     @mock.patch('romaine.logs.RomaineLogger.alert')
     def test_error(self, mock_alert):
@@ -670,3 +657,97 @@ class TestLoggingAPIAlertMethod(unittest.TestCase):
                 return
 
         assert False, "No matching record found"
+
+
+class TestLoggingAPIStatistics(unittest.TestCase):
+
+    def _scenario_outlines(self):
+        """
+        yields the logger context, then each scenario outline
+        """
+        # Given a logger context
+        with TestRomaineLogger() as logger:
+            yield logger
+            # And a test feature
+            feature = given_a_feature()
+            # When I enter the feature context
+            with logger.in_feature(feature):
+                # Given each scenario outline in the feature
+                for scenario in feature["elements"]:
+                    # When I enter the scenario outline context
+                    with logger.in_scenario_outline(scenario):
+                        yield scenario
+
+    def _scenario_outline_example_rows(self):
+        """
+        yields the logger context, then each scenario outline row with its
+        related scenario outline
+        """
+        scenario_outlines = self._scenario_outlines()
+        # Given a logger context
+        logger = next(scenario_outlines)
+        yield logger
+        # And a test feature
+        # When I enter the feature context
+        # Given each scenario outline in the feature
+        # When I enter the scenario outline context
+        for scenario in scenario_outlines:
+            # Given each example in the scenario outline
+            for example in scenario["examples"]:
+                # When I enter the example context
+                with logger.in_scenario_outline_example(example):
+                    # Given each row in the example
+                    for table_row, row_dict in zip(example["table"][1:], example["hashes"]):
+                        with logger.in_scenario_outline_example_row(table_row):
+                            yield scenario, row_dict
+
+    def _steps(self):
+        """
+        yields the logger context, then each step
+        """
+        scenario_outline_rows = self._scenario_outline_example_rows()
+        # Given a logger context
+        logger = next(scenario_outline_rows)
+        yield logger
+        # And a test feature
+        # When I enter the feature context
+        #     Given each scenario outline in the feature
+        #     When I enter the scenario outline context
+        #         Given each example in the scenario outline
+        #         When I enter the example context
+        #             Given each row in the example
+        #             When I enter the step context
+        for scenario, row_dict in scenario_outline_rows:
+            for step in scenario["steps"]:
+                step = logs.fill_step_with_example_row(step, row_dict)
+                with logger.in_step(step):
+                    yield step
+
+    def test_total_stats(self):
+        steps = self._steps()
+        logger = next(steps)
+        statistics = logger.statistics
+
+        for _ in steps:
+            pass
+
+        assert statistics["features"]["total"] == 1
+        assert statistics["scenarios"]["total"] == 2
+        assert statistics["steps"]["total"] == 4
+
+        looking_for = {
+            "1 features",
+            "2 scenarios",
+            "4 steps",
+        }
+
+        for record in logger.records:
+            if record.levelno == logging.INFO:
+                looking_for_ = list(looking_for)
+                for message in looking_for_:
+                    if message in record.msg:
+                        looking_for.remove(message)
+                if not looking_for:
+                    return
+        assert False, "Stats not found: {}".format(looking_for)
+
