@@ -1,6 +1,8 @@
+import datetime
+import logging
+
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
-import logging
 
 from romaine import exc
 
@@ -37,11 +39,13 @@ def fill_step_with_example_row(step, row):
 class AbstractRomaineLogger(object):
     __metaclass__ = ABCMeta
 
+    DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
     ERROR = logging.ERROR
 
     def __init__(self):
+        self._timing = None
         self._feature = None
         self._scenario_outline = None
         self._scenario_outline_example = None
@@ -52,6 +56,7 @@ class AbstractRomaineLogger(object):
             "features": {
                 "total": 0,
                 "passed": 0,
+                "run": [],
             },
             "scenarios": {
                 "total": 0,
@@ -63,7 +68,10 @@ class AbstractRomaineLogger(object):
                 "skipped": 0,
                 "failed": 0,
             },
+            "duration": None,
         }
+        self._timing = self._duration(self.statistics)
+        self._timing.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -77,6 +85,7 @@ class AbstractRomaineLogger(object):
         test run. Any other exception will be logged, but not handled.
         """
         handle = False
+        self._timing.__exit__(None, None, None)
 
         if exc_val is not None:
             if isinstance(exc_val, exc.SkipTest):
@@ -149,6 +158,26 @@ class AbstractRomaineLogger(object):
                     ', '.join(parts),
                 )
             )
+        self.alert(
+            self.DEBUG,
+            "All tests executed in {} seconds".format(
+                self.statistics["duration"]
+            )
+        )
+
+    @contextmanager
+    def _duration(self, stats):
+        start_time = datetime.datetime.now()
+        try:
+            yield
+        finally:
+            duration = datetime.datetime.now() - start_time
+            duration_s = (
+                (duration.days * 24 * 3600) +
+                duration.seconds +
+                (duration.microseconds / 1000000.0)
+            )
+            stats["duration"] = duration_s
 
     @contextmanager
     def in_step(self, step, verbose=True):
@@ -156,36 +185,38 @@ class AbstractRomaineLogger(object):
             "passed": False,
             "failed": False,
             "skipped": False,
+            "duration": None,
         }
 
+        step_text = "{type} {text}".format(**step)
         try:
-            yield
+            with self._duration(step["stats"]):
+                yield
         except exc.SkipTest:
             self.alert(self.WARNING, "{type} {text} (skipped)".format(**step))
             step["stats"]["skipped"] = True
             raise
         except AssertionError:
-            self.alert(self.ERROR, "{type} {text}".format(**step))
+            self.alert(self.ERROR, step_text)
             step["stats"]["failed"] = True
             raise
         except:
             step["stats"]["failed"] = True
             raise
         else:
-            self.alert(self.INFO if verbose else self.WARNING,
-                       "{type} {text}".format(**step))
+            self.alert(self.INFO if verbose else self.DEBUG, step_text)
             step["stats"]["passed"] = True
+        finally:
+            self.alert(
+                self.DEBUG,
+                "Step {!r} executed in {} seconds".format(
+                    step_text, step["stats"]["duration"]
+                )
+            )
 
     @staticmethod
     def _collect_scenario_stats(scenario, steps):
-        scenario["stats"] = stats = {
-            "passed_steps": 0,
-            "failed_steps": 0,
-            "skipped_steps": 0,
-            "total_steps": 0,
-            "passed": False,
-            "failed": False,
-        }
+        stats = scenario["stats"]
         for step in steps:
             stats["total_steps"] += 1
             step_stats = step.get("stats")
@@ -205,13 +236,32 @@ class AbstractRomaineLogger(object):
 
     @contextmanager
     def in_scenario(self, scenario):
-        self.alert(self.INFO, "Scenario:{description}".format(**scenario))
+        scenario["stats"] = {
+            "passed_steps": 0,
+            "failed_steps": 0,
+            "skipped_steps": 0,
+            "total_steps": 0,
+            "passed": False,
+            "failed": False,
+            "duration": None,
+        }
+        scenario_text = "Scenario:{description}".format(**scenario)
+
+        self.alert(self.INFO, scenario_text)
         try:
-            yield
+            with self._duration(scenario["stats"]):
+                yield
         except exc.SkipTest:
             pass
         finally:
             self._collect_scenario_stats(scenario, scenario["steps"])
+            self.alert(
+                self.DEBUG,
+                "Scenario '{}' executed in {} seconds".format(
+                    scenario["description"].strip(),
+                    scenario["stats"]["duration"]
+                )
+            )
 
     def _scenario_outline_steps(self):
         for example in self._scenario_outline["examples"]:
@@ -221,17 +271,34 @@ class AbstractRomaineLogger(object):
 
     @contextmanager
     def in_scenario_outline(self, scenario_outline):
+        scenario_outline["stats"] = {
+            "passed_steps": 0,
+            "failed_steps": 0,
+            "skipped_steps": 0,
+            "total_steps": 0,
+            "passed": False,
+            "failed": False,
+            "duration": None,
+        }
         self._scenario_outline = scenario_outline
         self.alert(self.INFO,
                    "Scenario Outline:{description}".format(**scenario_outline))
         try:
-            yield
+            with self._duration(scenario_outline["stats"]):
+                yield
         except exc.SkipTest:
             pass
         finally:
             self._collect_scenario_stats(scenario_outline,
                                          self._scenario_outline_steps())
             self._scenario_outline = None
+            self.alert(
+                self.DEBUG,
+                "Scenario Outline '{}' executed in {} seconds".format(
+                    scenario_outline["description"].strip(),
+                    scenario_outline["stats"]["duration"]
+                )
+            )
 
     @contextmanager
     def in_scenario_outline_example(self, scenario_outline_example):
@@ -277,6 +344,7 @@ class AbstractRomaineLogger(object):
 
     @contextmanager
     def in_feature(self, feature):
+        self.statistics["features"]["run"].append(feature)
         self._feature = feature
         feature["stats"] = {
             "passed_steps": 0,
@@ -288,13 +356,22 @@ class AbstractRomaineLogger(object):
             "total_scenarios": 0,
             "passed": False,
             "failed": False,
+            "duration": None,
         }
         self.alert(self.INFO, "\n".join(feature["header"]))
         try:
-            yield
+            with self._duration(feature["stats"]):
+                yield
         finally:
             self._collect_feature_stats(feature)
             self._feature = None
+            self.alert(
+                self.DEBUG,
+                "{} executed in {} seconds".format(
+                    feature["header"][0].strip(),
+                    feature["stats"]["duration"]
+                )
+            )
 
     def _collect_feature_stats(self, feature):
         stats = feature["stats"]
@@ -344,6 +421,7 @@ class RomaineLogger(AbstractRomaineLogger):
         self._stdlib_logger = logging.Logger(str(self))
 
         self._levels = {
+            self.DEBUG: self._stdlib_logger.debug,
             self.INFO: self._stdlib_logger.info,
             self.WARNING: self._stdlib_logger.warning,
             self.ERROR: self._stdlib_logger.error,

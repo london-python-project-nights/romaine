@@ -17,12 +17,12 @@ We want a logger on the core, and the core should have methods to print out:
     [x]     Warning: example row skipped
     [x]     Error: example row failure
 
-    [ ] Run statistics
+    [x] Run statistics
     [x]     Info: Total number of Features, Scenarios, Steps
     [x]     Info: Number of passed Features, Scenarios, Steps
     [x]     Info: Number of failed Steps
     [x]     Info: Number of skipped Steps
-    [ ]     Debug: Duration of each Feature, Scenario, Step (debug)
+    [x]     Debug: Duration of each Feature, Scenario, Step (debug)
 
     [x] Alert method actually does something
     [x]     Levels: logs to logging.Logger with appropriate log levels
@@ -494,7 +494,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
         assert true_for_one_call(
             mock_alert,
 
-            lambda level, body: (
+            lambda level, body="": (
                 (level is logs.RomaineLogger.WARNING) and
                 (body == "    | 1   | one  | (skipped)")
             )
@@ -557,7 +557,7 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
         assert true_for_one_call(
             mock_alert,
 
-            lambda level, body: (
+            lambda level, body="": (
                 (level is logs.RomaineLogger.ERROR) and
                 (body == "    | 1   | one  |")
             )
@@ -712,6 +712,30 @@ class TestLoggingAPIStatistics(unittest.TestCase):
 
         for record in logger.records:
             if record.levelno == logging.INFO:
+                looking_for_ = list(looking_for)
+                for message in looking_for_:
+                    if message in record.msg:
+                        looking_for.remove(message)
+                if not looking_for:
+                    return
+        assert False, "Stats not found: {}".format(looking_for)
+
+    def test_timing_stats(self):
+        for logger in self._run_for_steps():
+            pass
+
+        assert logger.statistics["duration"]
+
+        looking_for = {
+            "Step 'Given a number 1' executed in",
+            "Step 'Then I expect word one' executed in",
+            "Scenario Outline 'Test Scenario Outline' executed in",
+            "Feature executed in",
+            "All tests executed in",
+        }
+
+        for record in logger.records:
+            if record.levelno == logging.DEBUG:
                 looking_for_ = list(looking_for)
                 for message in looking_for_:
                     if message in record.msg:
