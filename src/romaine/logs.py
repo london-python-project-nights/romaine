@@ -43,10 +43,8 @@ class AbstractRomaineLogger(object):
 
     def __init__(self):
         self._feature = None
-        self._scenario = None
         self._scenario_outline = None
         self._scenario_outline_example = None
-        self._step = None
         self.statistics = None
 
     def __enter__(self):
@@ -54,12 +52,10 @@ class AbstractRomaineLogger(object):
             "features": {
                 "total": 0,
                 "passed": 0,
-                "failed": 0,
             },
             "scenarios": {
                 "total": 0,
                 "passed": 0,
-                "failed": 0,
             },
             "steps": {
                 "total": 0,
@@ -94,6 +90,12 @@ class AbstractRomaineLogger(object):
             elif isinstance(exc_val, AssertionError):
                 handle = True
 
+        self._log_stats()
+
+        if handle:
+            return True
+
+    def _log_stats(self):
         if "features" in self.statistics:
             feature = self.statistics["features"]
             total = feature.get("total", 0)
@@ -108,7 +110,6 @@ class AbstractRomaineLogger(object):
                     passed,
                 )
             )
-
         if "scenarios" in self.statistics:
             scenarios = self.statistics["scenarios"]
             total = scenarios.get("total", 0)
@@ -122,7 +123,6 @@ class AbstractRomaineLogger(object):
                     passed,
                 )
             )
-
         if "steps" in self.statistics:
             steps = self.statistics["steps"]
             total = steps.get("total", 0)
@@ -138,12 +138,13 @@ class AbstractRomaineLogger(object):
                 )
             )
 
-        if handle:
-            return True
-
     @contextmanager
     def in_step(self, step, verbose=True):
-        self._step = step
+        step["stats"] = {
+            "passed": False,
+            "failed": False,
+        }
+
         try:
             yield
         except exc.SkipTest:
@@ -151,32 +152,66 @@ class AbstractRomaineLogger(object):
             raise
         except AssertionError:
             self.alert(self.ERROR, "{type} {text}".format(**step))
+            step["stats"]["failed"] = True
+            raise
+        except:
+            step["stats"]["failed"] = True
             raise
         else:
             self.alert(self.INFO if verbose else self.WARNING,
                        "{type} {text}".format(**step))
-            self.statistics["steps"]["passed"] += 1
-        finally:
-            self.statistics["steps"]["total"] += 1
-            self._step = None
+            step["stats"]["passed"] = True
+
+    @staticmethod
+    def _collect_step_stats(steps, stats):
+            for step in steps:
+                stats["total_steps"] += 1
+                step_stats = step.get("stats")
+                if step_stats is None:
+                    pass
+                elif step_stats["passed"]:
+                    stats["passed_steps"] += 1
+                elif step_stats["failed"]:
+                    stats["failed_steps"] += 1
+
+            if stats["failed_steps"]:
+                stats["failed"] = True
+            else:
+                stats["passed"] = True
 
     @contextmanager
     def in_scenario(self, scenario):
-        self._scenario = scenario
+        scenario["stats"] = {
+            "passed_steps": 0,
+            "failed_steps": 0,
+            "total_steps": 0,
+            "passed": False,
+            "failed": False,
+        }
         self.alert(self.INFO, "Scenario:{description}".format(**scenario))
         try:
             yield
         except exc.SkipTest:
             pass
-        else:
-            self.statistics["scenarios"]["passed"] += 1
         finally:
-            self.statistics["scenarios"]["total"] += 1
-            self._scenario = None
+            self._collect_step_stats(scenario["steps"], scenario["stats"])
+
+    def _scenario_outline_steps(self):
+        for example in self._scenario_outline["examples"]:
+            for run in example.get("runs", ()):
+                for step in run:
+                    yield step
 
     @contextmanager
     def in_scenario_outline(self, scenario_outline):
         self._scenario_outline = scenario_outline
+        scenario_outline["stats"] = {
+            "passed_steps": 0,
+            "failed_steps": 0,
+            "total_steps": 0,
+            "passed": False,
+            "failed": False,
+        }
         self.alert(self.INFO,
                    "Scenario Outline:{description}".format(**scenario_outline))
         try:
@@ -184,12 +219,16 @@ class AbstractRomaineLogger(object):
         except exc.SkipTest:
             pass
         finally:
+            self._collect_step_stats(
+                self._scenario_outline_steps(),
+                scenario_outline["stats"]
+            )
             self._scenario_outline = None
 
     @contextmanager
     def in_scenario_outline_example(self, scenario_outline_example):
         self._scenario_outline_example = scenario_outline_example
-        self._scenario_outline_example_row_index = 0
+        self._scenario_outline_example["runs"] = []
 
         headings = scenario_outline_example['table'][0]
         heading_row = "|".join(headings)
@@ -200,29 +239,29 @@ class AbstractRomaineLogger(object):
             "    |{heading_row}|"
                 .format(heading_row=heading_row, **scenario_outline_example)
         )
-
         try:
             yield
         finally:
-            del self._scenario_outline_example_row_index
-            self._scenario_outline = None
+            self._scenario_outline_example = None
 
     @contextmanager
-    def in_scenario_outline_example_row(self, row):
-        self.alert(self.INFO, "    |{}|".format("|".join(row)))
+    def in_scenario_outline_example_row(self, example, index):
+        row_string = example["table"][index + 1]
+        row_dict = example["hashes"][index]
+        run = [
+            fill_step_with_example_row(step, row_dict)
+            for step in self._scenario_outline["steps"]
+        ]
+        self._scenario_outline_example["runs"].append(run)
+        self.alert(self.INFO, "    |{}|".format("|".join(row_string)))
         try:
-            yield
+            yield run
         except exc.SkipTest:
             self.alert(self.WARNING,
-                       "    |{}| (skipped)".format("|".join(row)))
+                       "    |{}| (skipped)".format("|".join(row_string)))
         except AssertionError:
             self.alert(self.ERROR,
-                       "    |{}|".format("|".join(row)))
-            raise
-        else:
-            self.statistics["scenarios"]["passed"] += 1
-        finally:
-            self.statistics["scenarios"]["total"] += 1
+                       "    |{}|".format("|".join(row_string)))
 
     @abstractmethod
     def alert(self, level, body='', exc_info=False):
@@ -231,13 +270,60 @@ class AbstractRomaineLogger(object):
     @contextmanager
     def in_feature(self, feature):
         self._feature = feature
+        feature["stats"] = {
+            "passed_steps": 0,
+            "failed_steps": 0,
+            "total_steps": 0,
+            "passed_scenarios": 0,
+            "failed_scenarios": 0,
+            "total_scenarios": 0,
+            "passed": False,
+            "failed": False,
+        }
         self.alert(self.INFO, "\n".join(feature["header"]))
         try:
             yield
-            self.statistics["features"]["passed"] += 1
         finally:
-            self.statistics["features"]["total"] += 1
+            self._collect_feature_stats(feature)
             self._feature = None
+
+    def _collect_feature_stats(self, feature):
+        stats = feature["stats"]
+        self.statistics["features"]["total"] += 1
+
+        for scenario in feature["elements"]:
+            stats["total_scenarios"] += 1
+
+            scenario_stats = scenario.get("stats")
+            if scenario_stats is None:
+                # If for some reason the scenario hasn't run, don't
+                # try to collect its stats
+                continue
+
+            for key in (
+                "passed_steps",
+                "failed_steps",
+                "total_steps",
+            ):
+                stats[key] += scenario_stats.get(key, 0)
+
+            self.statistics["scenarios"]["total"] += 1
+
+            if scenario_stats.get("passed"):
+                stats["passed_scenarios"] += 1
+                self.statistics["scenarios"]["passed"] += 1
+            elif scenario_stats.get("failed"):
+                stats["failed_scenarios"] += 1
+
+        self.statistics["steps"]["passed"] += stats["passed_steps"]
+        self.statistics["steps"]["failed"] += stats["failed_steps"]
+        self.statistics["steps"]["total"] += stats["total_steps"]
+
+        if stats["failed_scenarios"]:
+            stats["failed"] = True
+        else:
+            stats["passed"] = True
+            self.statistics["features"]["passed"] += 1
 
 
 class RomaineLogger(AbstractRomaineLogger):

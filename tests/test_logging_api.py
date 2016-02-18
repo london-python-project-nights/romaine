@@ -406,36 +406,42 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
         outline = given_a_test_scenario_outline()
         # And a logger context
         with logs.RomaineLogger() as logger:
-            # When I enter the first outline example context
-            example = outline['examples'][0]
-            with logger.in_scenario_outline_example(example):
-                # Then the logger alerts with information with the
-                # example table heading
-                if not true_for_one_call(
-                    mock_alert,
-
-                    lambda level, body: (
-                        (level is logs.RomaineLogger.INFO) and
-                        ("Test Example" in body)
-                    )
-                ): raise RuntimeError
-                if not true_for_one_call(
-                    mock_alert,
-
-                    lambda level, body: (
-                        (level is logs.RomaineLogger.INFO) and
-                        ("    | num | word |" in body)
-                    )
-                ): raise RuntimeError
-
-                # When I enter the first row's context
-                row = example['table'][1]
-                with logger.in_scenario_outline_example_row(row):
-                    # And I exit the first row's context
+            # When I enter the scenario outline context
+            with logger.in_scenario_outline(outline):
+                # And I enter the first outline example context
+                example = outline['examples'][0]
+                with logger.in_scenario_outline_example(example):
+                    # And I enter the first row's context
+                    with logger.in_scenario_outline_example_row(
+                        example, 0
+                    ) as steps:
+                        # And I enter the first step's context
+                        step = steps[0]
+                        # When I enter the step context
+                        with logger.in_step(step, verbose=False):
+                            # And I exit the first row's context
+                            pass
+                    # And I exit the first outline example context
                     pass
-                # And I exit the first outline example context
-                pass
-        # Then the logger alerts with information with the scenario
+        # Then the logger alerts with information with the
+        # example table heading
+        if not true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logs.RomaineLogger.INFO) and
+                ("Test Example" in body)
+            )
+        ): raise RuntimeError
+        if not true_for_one_call(
+            mock_alert,
+
+            lambda level, body: (
+                (level is logs.RomaineLogger.INFO) and
+                ("    | num | word |" in body)
+            )
+        ): raise RuntimeError
+        # And the logger alerts with information with the scenario
         # outline example row as text
         assert true_for_one_call(
             mock_alert,
@@ -454,22 +460,21 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
         outline = given_a_test_scenario_outline()
         # And a logger context
         with logs.RomaineLogger() as logger:
-            # When I enter the first outline example context
-            example = outline['examples'][0]
-            with logger.in_scenario_outline_example(example):
-
-                # When I enter the first row's context
-                row = example['table'][1]
-                with logger.in_scenario_outline_example_row(row):
-                    # And I enter the first step's context
-                    step = logs.fill_step_with_example_row(
-                        outline["steps"][0],
-                        example["hashes"][0]
-                    )
-                    # When I enter the step context
-                    with logger.in_step(step, verbose=False):
-                        # And I raise a skip exception
-                        raise exc.SkipTest
+            # When I enter the scenario outline context
+            with logger.in_scenario_outline(outline):
+                # And I enter the first outline example context
+                example = outline['examples'][0]
+                with logger.in_scenario_outline_example(example):
+                    # And I enter the first row's context
+                    with logger.in_scenario_outline_example_row(
+                        example, 0
+                    ) as steps:
+                        # And I enter the first step's context
+                        step = steps[0]
+                        # When I enter the step context
+                        with logger.in_step(step, verbose=False):
+                            # And I raise a skip exception
+                            raise exc.SkipTest
         # Then the logger alerts with information with the
         # example table heading
         assert true_for_one_call(
@@ -518,22 +523,21 @@ class TestLoggingAPIScenarioOutlineExample(unittest.TestCase):
         outline = given_a_test_scenario_outline()
         # And a logger context
         with logs.RomaineLogger() as logger:
-            # When I enter the first outline example context
-            example = outline['examples'][0]
-            with logger.in_scenario_outline_example(example):
-
-                # When I enter the first row's context
-                row = example['table'][1]
-                with logger.in_scenario_outline_example_row(row):
-                    # And I enter the first step's context
-                    step = logs.fill_step_with_example_row(
-                        outline["steps"][0],
-                        example["hashes"][0]
-                    )
-                    # When I enter the step context
-                    with logger.in_step(step, verbose=False):
-                        # And I raise a skip exception
-                        assert False
+            # When I enter the scenario outline context
+            with logger.in_scenario_outline(outline):
+                # And I enter the first outline example context
+                example = outline['examples'][0]
+                with logger.in_scenario_outline_example(example):
+                    # And I enter the first row's context
+                    with logger.in_scenario_outline_example_row(
+                        example, 0
+                    ) as steps:
+                        # And I enter the first step's context
+                        step = steps[0]
+                        # When I enter the step context
+                        with logger.in_step(step, verbose=False):
+                            # And I raise a skip exception
+                            assert False
         # Then the logger alerts with information with the
         # example table heading
         assert true_for_one_call(
@@ -661,9 +665,12 @@ class TestLoggingAPIAlertMethod(unittest.TestCase):
 
 class TestLoggingAPIStatistics(unittest.TestCase):
 
-    def _scenario_outlines(self):
+    def _fail(self):
+        assert False
+
+    def _run_for_steps(self, fn=None):
         """
-        yields the logger context, then each scenario outline
+        yields the logger context, then runs fn for each step
         """
         # Given a logger context
         with TestRomaineLogger() as logger:
@@ -676,67 +683,27 @@ class TestLoggingAPIStatistics(unittest.TestCase):
                 for scenario in feature["elements"]:
                     # When I enter the scenario outline context
                     with logger.in_scenario_outline(scenario):
-                        yield scenario
-
-    def _scenario_outline_example_rows(self):
-        """
-        yields the logger context, then each scenario outline row with its
-        related scenario outline
-        """
-        scenario_outlines = self._scenario_outlines()
-        # Given a logger context
-        logger = next(scenario_outlines)
-        yield logger
-        # And a test feature
-        # When I enter the feature context
-        # Given each scenario outline in the feature
-        # When I enter the scenario outline context
-        for scenario in scenario_outlines:
-            # Given each example in the scenario outline
-            for example in scenario["examples"]:
-                # When I enter the example context
-                with logger.in_scenario_outline_example(example):
-                    # Given each row in the example
-                    for table_row, row_dict in zip(
-                        example["table"][1:],
-                        example["hashes"]
-                    ):
-                        with logger.in_scenario_outline_example_row(table_row):
-                            yield scenario, row_dict
-
-    def _steps(self):
-        """
-        yields the logger context, then each step
-        """
-        scenario_outline_rows = self._scenario_outline_example_rows()
-        # Given a logger context
-        logger = next(scenario_outline_rows)
-        yield logger
-        # And a test feature
-        # When I enter the feature context
-        #     Given each scenario outline in the feature
-        #     When I enter the scenario outline context
-        #         Given each example in the scenario outline
-        #         When I enter the example context
-        #             Given each row in the example
-        #             When I enter the step context
-        for scenario, row_dict in scenario_outline_rows:
-            for step in scenario["steps"]:
-                step = logs.fill_step_with_example_row(step, row_dict)
-                with logger.in_step(step):
-                    yield step
+                        # Given each example in the scenario outline
+                        for example in scenario["examples"]:
+                            # When I enter the example context
+                            with logger.in_scenario_outline_example(example):
+                                # Given each row in the example
+                                for index in range(len(example["hashes"])):
+                                    with logger\
+                                        .in_scenario_outline_example_row(
+                                            example, index) as run:
+                                        for step in run:
+                                            with logger.in_step(step):
+                                                if fn is not None:
+                                                    fn()
 
     def test_total_stats(self):
-        steps = self._steps()
-        logger = next(steps)
-        statistics = logger.statistics
-
-        for _ in steps:
+        for logger in self._run_for_steps():
             pass
 
-        assert statistics["features"]["total"] == 1
-        assert statistics["scenarios"]["total"] == 2
-        assert statistics["steps"]["total"] == 4
+        assert logger.statistics["features"]["total"] == 1
+        assert logger.statistics["scenarios"]["total"] == 2
+        assert logger.statistics["steps"]["total"] == 4
 
         looking_for = {
             "1 feature",
@@ -755,16 +722,12 @@ class TestLoggingAPIStatistics(unittest.TestCase):
         assert False, "Stats not found: {}".format(looking_for)
 
     def test_passed_stats(self):
-        steps = self._steps()
-        logger = next(steps)
-        statistics = logger.statistics
-
-        for _ in steps:
+        for logger in self._run_for_steps():
             pass
 
-        assert statistics["features"]["passed"] == 1
-        assert statistics["scenarios"]["passed"] == 2
-        assert statistics["steps"]["passed"] == 4
+        assert logger.statistics["features"]["passed"] == 1
+        assert logger.statistics["scenarios"]["passed"] == 2
+        assert logger.statistics["steps"]["passed"] == 4
 
         looking_for = {
             "1 feature (1 passed)",
