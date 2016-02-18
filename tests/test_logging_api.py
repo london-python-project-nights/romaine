@@ -744,3 +744,28 @@ class TestLoggingAPIStatistics(unittest.TestCase):
                 if not looking_for:
                     return
         assert False, "Stats not found: {}".format(looking_for)
+
+    def test_failed_stats(self):
+        for logger in self._run_for_steps(self._fail):
+            pass
+
+        assert logger.statistics["features"]["passed"] == 0
+        assert logger.statistics["scenarios"]["passed"] == 0
+        assert logger.statistics["steps"]["passed"] == 0
+        assert logger.statistics["steps"]["failed"] == 2
+
+        looking_for = {
+            "1 feature (0 passed)",
+            "2 scenarios (0 passed)",
+            "4 steps (2 failed, 0 passed)",
+        }
+
+        for record in logger.records:
+            if record.levelno == logging.INFO:
+                looking_for_ = list(looking_for)
+                for message in looking_for_:
+                    if message in record.msg:
+                        looking_for.remove(message)
+                if not looking_for:
+                    return
+        assert False, "Stats not found: {}".format(looking_for)

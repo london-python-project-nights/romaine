@@ -125,16 +125,22 @@ class AbstractRomaineLogger(object):
             )
         if "steps" in self.statistics:
             steps = self.statistics["steps"]
-            total = steps.get("total", 0)
-            passed = steps.get("passed", 0)
             word = "step" if total is 1 else "steps"
+            parts = []
+
+            failed = steps.get("failed", 0)
+
+            if failed:
+                parts.append("{} failed".format(failed))
+
+            parts.append("{} passed".format(steps.get("passed", 0)))
 
             self.alert(
                 self.INFO,
-                "{} {} ({} passed)".format(
-                    total,
+                "{} {} ({})".format(
+                    steps.get("total", 0),
                     word,
-                    passed,
+                    ', '.join(parts),
                 )
             )
 
