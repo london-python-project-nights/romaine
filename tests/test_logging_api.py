@@ -19,13 +19,9 @@ We want a logger on the core, and the core should have methods to print out:
 
     [ ] Run statistics
     [x]     Info: Total number of Features, Scenarios, Steps
-    [ ]     Info: Number of passed Features, Scenarios, Steps
-    [ ]     Info: Number of failed Features, Scenarios, Steps
-    [ ]     Info: Number of skipped Features, Scenarios, Steps
-    [ ]     Info: Total number of Scenarios, Steps within parent
-    [ ]     Info: Number of passed Scenarios, Steps within parent
-    [ ]     Info: Number of failed Scenarios, Steps within parent
-    [ ]     Info: Number of skipped Scenarios, Steps within parent
+    [x]     Info: Number of passed Features, Scenarios, Steps
+    [x]     Info: Number of failed Steps
+    [x]     Info: Number of skipped Steps
     [ ]     Debug: Duration of each Feature, Scenario, Step (debug)
 
     [x] Alert method actually does something
@@ -668,6 +664,9 @@ class TestLoggingAPIStatistics(unittest.TestCase):
     def _fail(self):
         assert False
 
+    def _skip(self):
+        raise exc.SkipTest
+
     def _run_for_steps(self, fn=None):
         """
         yields the logger context, then runs fn for each step
@@ -758,6 +757,31 @@ class TestLoggingAPIStatistics(unittest.TestCase):
             "1 feature (0 passed)",
             "2 scenarios (0 passed)",
             "4 steps (2 failed, 0 passed)",
+        }
+
+        for record in logger.records:
+            if record.levelno == logging.INFO:
+                looking_for_ = list(looking_for)
+                for message in looking_for_:
+                    if message in record.msg:
+                        looking_for.remove(message)
+                if not looking_for:
+                    return
+        assert False, "Stats not found: {}".format(looking_for)
+
+    def test_skipped_stats(self):
+        for logger in self._run_for_steps(self._skip):
+            pass
+
+        assert logger.statistics["features"]["passed"] == 0
+        assert logger.statistics["scenarios"]["passed"] == 0
+        assert logger.statistics["steps"]["passed"] == 0
+        assert logger.statistics["steps"]["skipped"] == 2
+
+        looking_for = {
+            "1 feature (0 passed)",
+            "2 scenarios (0 passed)",
+            "4 steps (2 skipped, 0 passed)",
         }
 
         for record in logger.records:
