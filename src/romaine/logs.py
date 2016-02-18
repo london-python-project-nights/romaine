@@ -94,16 +94,49 @@ class AbstractRomaineLogger(object):
             elif isinstance(exc_val, AssertionError):
                 handle = True
 
-        for statistic_name in (
-            "features",
-            "scenarios",
-            "steps",
-        ):
-            statistic_value = self.statistics.get(statistic_name, {})
-            self.alert(self.INFO, "{} {}".format(
-                statistic_value.get("total"),
-                statistic_name,
-            ))
+        if "features" in self.statistics:
+            feature = self.statistics["features"]
+            total = feature.get("total", 0)
+            passed = feature.get("passed", 0)
+            word = "feature" if total is 1 else "features"
+
+            self.alert(
+                self.INFO,
+                "{} {} ({} passed)".format(
+                    total,
+                    word,
+                    passed,
+                )
+            )
+
+        if "scenarios" in self.statistics:
+            scenarios = self.statistics["scenarios"]
+            total = scenarios.get("total", 0)
+            passed = scenarios.get("passed", 0)
+            word = "scenario" if total is 1 else "scenarios"
+            self.alert(
+                self.INFO,
+                "{} {} ({} passed)".format(
+                    total,
+                    word,
+                    passed,
+                )
+            )
+
+        if "steps" in self.statistics:
+            steps = self.statistics["steps"]
+            total = steps.get("total", 0)
+            passed = steps.get("passed", 0)
+            word = "step" if total is 1 else "steps"
+
+            self.alert(
+                self.INFO,
+                "{} {} ({} passed)".format(
+                    total,
+                    word,
+                    passed,
+                )
+            )
 
         if handle:
             return True
@@ -122,6 +155,7 @@ class AbstractRomaineLogger(object):
         else:
             self.alert(self.INFO if verbose else self.WARNING,
                        "{type} {text}".format(**step))
+            self.statistics["steps"]["passed"] += 1
         finally:
             self.statistics["steps"]["total"] += 1
             self._step = None
@@ -134,6 +168,8 @@ class AbstractRomaineLogger(object):
             yield
         except exc.SkipTest:
             pass
+        else:
+            self.statistics["scenarios"]["passed"] += 1
         finally:
             self.statistics["scenarios"]["total"] += 1
             self._scenario = None
@@ -183,6 +219,8 @@ class AbstractRomaineLogger(object):
             self.alert(self.ERROR,
                        "    |{}|".format("|".join(row)))
             raise
+        else:
+            self.statistics["scenarios"]["passed"] += 1
         finally:
             self.statistics["scenarios"]["total"] += 1
 
@@ -196,6 +234,7 @@ class AbstractRomaineLogger(object):
         self.alert(self.INFO, "\n".join(feature["header"]))
         try:
             yield
+            self.statistics["features"]["passed"] += 1
         finally:
             self.statistics["features"]["total"] += 1
             self._feature = None

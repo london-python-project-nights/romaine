@@ -697,7 +697,10 @@ class TestLoggingAPIStatistics(unittest.TestCase):
                 # When I enter the example context
                 with logger.in_scenario_outline_example(example):
                     # Given each row in the example
-                    for table_row, row_dict in zip(example["table"][1:], example["hashes"]):
+                    for table_row, row_dict in zip(
+                        example["table"][1:],
+                        example["hashes"]
+                    ):
                         with logger.in_scenario_outline_example_row(table_row):
                             yield scenario, row_dict
 
@@ -736,7 +739,7 @@ class TestLoggingAPIStatistics(unittest.TestCase):
         assert statistics["steps"]["total"] == 4
 
         looking_for = {
-            "1 features",
+            "1 feature",
             "2 scenarios",
             "4 steps",
         }
@@ -751,3 +754,30 @@ class TestLoggingAPIStatistics(unittest.TestCase):
                     return
         assert False, "Stats not found: {}".format(looking_for)
 
+    def test_passed_stats(self):
+        steps = self._steps()
+        logger = next(steps)
+        statistics = logger.statistics
+
+        for _ in steps:
+            pass
+
+        assert statistics["features"]["passed"] == 1
+        assert statistics["scenarios"]["passed"] == 2
+        assert statistics["steps"]["passed"] == 4
+
+        looking_for = {
+            "1 feature (1 passed)",
+            "2 scenarios (2 passed)",
+            "4 steps (4 passed)",
+        }
+
+        for record in logger.records:
+            if record.levelno == logging.INFO:
+                looking_for_ = list(looking_for)
+                for message in looking_for_:
+                    if message in record.msg:
+                        looking_for.remove(message)
+                if not looking_for:
+                    return
+        assert False, "Stats not found: {}".format(looking_for)
