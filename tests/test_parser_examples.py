@@ -87,6 +87,10 @@ class TestExamplesParser(unittest.TestCase):
                         'one': ['1'],
                         'two': ['2'],
                     },
+                    'table': [
+                        ['one', 'two'],
+                        ['1', '2'],
+                    ],
                 },
                 'remaining': [],
                 'raw_input': input_data,
@@ -127,6 +131,10 @@ class TestExamplesParser(unittest.TestCase):
                         'first': ['1'],
                         'second': ['2'],
                     },
+                    'table': [
+                        ['first', 'second'],
+                        ['1', '2'],
+                    ],
                 },
                 'remaining': [],
                 'raw_input': input_data,
@@ -187,6 +195,9 @@ class TestExamplesParser(unittest.TestCase):
                         'one': [],
                         'two': [],
                     },
+                    'table': [
+                        ['one', 'two'],
+                    ],
                 },
                 'remaining': [],
                 'raw_input': input_data,
@@ -237,6 +248,10 @@ class TestExamplesParser(unittest.TestCase):
                         'first': ['1'],
                         'second': ['2'],
                     },
+                    'table': [
+                        ['first', 'second'],
+                        ['1', '2'],
+                    ],
                 },
                 'remaining': [],
                 'raw_input': input_data,
@@ -286,6 +301,10 @@ class TestExamplesParser(unittest.TestCase):
                         'first': ['1'],
                         'second': ['2'],
                     },
+                    'table': [
+                        ['first', 'second'],
+                        ['1', '2'],
+                    ],
                 },
                 'remaining': ['lemons'],
                 'raw_input': input_data,
@@ -340,6 +359,10 @@ class TestExamplesParser(unittest.TestCase):
                         'first': ['1'],
                         'second': ['2'],
                     },
+                    'table': [
+                        ['first', 'second'],
+                        ['1', '2']
+                    ],
                 },
                 'remaining': [
                     ' Examples: This test is unimportant',
@@ -468,6 +491,10 @@ class TestExamplesParser(unittest.TestCase):
                             'one': ['1'],
                             'two': ['2'],
                         },
+                        'table': [
+                            ['one', 'two'],
+                            ['1', '2'],
+                        ],
                     },
                 ],
                 'remaining': [],
@@ -525,6 +552,10 @@ class TestExamplesParser(unittest.TestCase):
                             'first': ['1'],
                             'second': ['2'],
                         },
+                        'table': [
+                            ['first', 'second'],
+                            ['1', '2'],
+                        ],
                     },
                     {
                         'leading_comments_and_space': [],
@@ -534,6 +565,10 @@ class TestExamplesParser(unittest.TestCase):
                             'first': ['3'],
                             'second': ['4'],
                         },
+                        'table': [
+                            ['first', 'second'],
+                            ['3', '4'],
+                        ],
                     },
                 ],
                 'remaining': [],
@@ -592,6 +627,10 @@ class TestExamplesParser(unittest.TestCase):
                             'first': ['1'],
                             'second': ['2'],
                         },
+                        'table': [
+                            ['first', 'second'],
+                            ['1', '2']
+                        ],
                     },
                 ],
                 'remaining': [
