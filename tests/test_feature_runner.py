@@ -136,3 +136,21 @@ class TestFeatureRunner(unittest.TestCase):
         statistics = core.run_features(feature.copy())
         # Then the output shows that the expected steps have been run
         check_stats(statistics, steps)
+
+    def test_full_fail_then(self):
+        # Given I have Romaine's core
+        from romaine.core import Core
+        core = Core()
+        # And I have some step definitions
+        importlib.import_module("test_data.steps.some_steps")
+        # And I have a feature object
+        steps = (
+            ("Given", "step_1", True),
+            ("When", "step_2", True),
+            ("Then", "step_8", False),
+        )
+        feature = given_i_have_a_feature_object(steps)
+        # When I run the feature
+        statistics = core.run_features(feature.copy())
+        # Then the output shows that the expected steps have been run
+        check_stats(statistics, steps)

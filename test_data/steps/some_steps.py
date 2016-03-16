@@ -28,17 +28,17 @@ def step_5():
 
 @Given('Given step_6')
 def step_6():
-    pass
+    assert False
 
 
 @When('When step_7')
 def step_7():
-    pass
+    assert False
 
 
 @Then('Then step_8')
 def step_8():
-    pass
+    assert False
 
 
 @And('And step_9')
