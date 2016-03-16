@@ -48,3 +48,6 @@ class Core(object):
         self.feature_file_paths.update(feature_candidates)
 
         return feature_candidates
+
+    def run_feature(self, feature):
+        return {}
