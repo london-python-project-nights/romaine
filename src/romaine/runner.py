@@ -10,6 +10,11 @@ def run_scenario(scenario, steps, logger):
             run_step(step, steps, logger)
 
 
+def find_definition(step, steps):
+    step_key = step["text"]
+    return steps[step_key]
+
+
 def run_step(step, steps, logger):
     with logger.in_step(step):
-        pass
+        find_definition(step, steps).func()
