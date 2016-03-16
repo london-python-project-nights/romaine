@@ -7,6 +7,20 @@ import unittest
 from tests.common import unload_test_data
 
 
+class StepStatus:
+    class _Status(object):
+        def __init__(self, status_string):
+            self.status_string = status_string
+
+        def __call__(self, status_object):
+            return status_object.status_string == self.status_string
+
+    passed = _Status("passed")
+    failed = _Status("failed")
+    skipped = _Status("skipped")
+    not_reached = _Status("not_reached")
+
+
 def make_feature(name="Feature: Test Feature", **custom):
     feature = {
         'header': [name],
@@ -55,14 +69,16 @@ def given_i_have_a_feature_object(steps):
 
 def check_stats(statistics, steps):
     step_stats = {"total": 0, "passed": 0, "skipped": 0, "failed": 0}
-    for (_, __, p) in steps:
+    for (_, __, status) in steps:
         step_stats["total"] += 1
-        if p:
+
+        if StepStatus.passed(status):
             step_stats["passed"] += 1
-        elif p is None:
+        elif StepStatus.skipped(status):
             step_stats["skipped"] += 1
-        elif not p:
+        elif StepStatus.failed(status):
             step_stats["failed"] += 1
+
     all_passed = step_stats["passed"] == step_stats["total"]
     assert statistics["scenarios"] == {
         "total": 1,
@@ -102,16 +118,16 @@ def check_stats(statistics, steps):
     }.items():
         assert scenario_stats[key] == expected
     for step_details, step_def in zip(steps, scenario["steps"]):
-        step_type, step_name, passed = step_details
+        step_type, step_name, step_status = step_details
         assert step_def["type"] == step_type
         assert step_def["text"] == step_name
 
         for (key, expected) in {
-            "passed": passed is True,
-            "failed": passed is False,
-            "skipped": passed is None,
+            "passed": StepStatus.passed(step_status),
+            "failed": StepStatus.failed(step_status),
+            "skipped": StepStatus.skipped(step_status),
         }.items():
-            assert step_def["stats"][key] == expected
+            assert step_def.get("stats", {}).get(key, 0) == expected
 
 
 class TestFeatureRunner(unittest.TestCase):
@@ -127,9 +143,9 @@ class TestFeatureRunner(unittest.TestCase):
         importlib.import_module("test_data.steps.some_steps")
         # And I have a feature object
         steps = (
-            ("Given", "step_1", True),
-            ("When", "step_2", True),
-            ("Then", "step_3", True),
+            ("Given", "step_1", StepStatus.passed),
+            ("When", "step_2", StepStatus.passed),
+            ("Then", "step_3", StepStatus.passed),
         )
         feature = given_i_have_a_feature_object(steps)
         # When I run the feature
@@ -145,9 +161,27 @@ class TestFeatureRunner(unittest.TestCase):
         importlib.import_module("test_data.steps.some_steps")
         # And I have a feature object
         steps = (
-            ("Given", "step_1", True),
-            ("When", "step_2", True),
-            ("Then", "step_8", False),
+            ("Given", "step_1", StepStatus.passed),
+            ("When", "step_2", StepStatus.passed),
+            ("Then", "step_8", StepStatus.failed),
+        )
+        feature = given_i_have_a_feature_object(steps)
+        # When I run the feature
+        statistics = core.run_features(feature.copy())
+        # Then the output shows that the expected steps have been run
+        check_stats(statistics, steps)
+
+    def test_full_fail_when(self):
+        # Given I have Romaine's core
+        from romaine.core import Core
+        core = Core()
+        # And I have some step definitions
+        importlib.import_module("test_data.steps.some_steps")
+        # And I have a feature object
+        steps = (
+            ("Given", "step_1", StepStatus.passed),
+            ("When", "step_7", StepStatus.failed),
+            ("Then", "step_8", StepStatus.not_reached),
         )
         feature = given_i_have_a_feature_object(steps)
         # When I run the feature
