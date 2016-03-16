@@ -68,55 +68,70 @@ def given_i_have_a_feature_object(steps):
 
 
 def check_stats(statistics, steps):
-    step_stats = {"total": 0, "passed": 0, "skipped": 0, "failed": 0}
+    steps_total = 0
+    steps_passed = 0
+    steps_skipped = 0
+    steps_failed = 0
+
+    all_passed = None
+    all_failed = False
+
     for (_, __, status) in steps:
-        step_stats["total"] += 1
-
+        steps_total += 1
         if StepStatus.passed(status):
-            step_stats["passed"] += 1
+            steps_passed += 1
+            if all_passed is None:
+                all_passed = True
         elif StepStatus.skipped(status):
-            step_stats["skipped"] += 1
+            steps_skipped += 1
         elif StepStatus.failed(status):
-            step_stats["failed"] += 1
+            steps_failed += 1
+            all_failed = True
+            all_passed = False
 
-    all_passed = step_stats["passed"] == step_stats["total"]
-    assert statistics["scenarios"] == {
-        "total": 1,
-        "passed": 1 if all_passed else 0,
-    }
-    assert statistics["steps"] == step_stats
-    for key, expected in {
-        "total": 1,
-        "passed": 1 if all_passed else 0,
-    }.items():
-        assert statistics["features"][key] == expected
+    if all_passed is None:
+        all_passed = False
+
+    features_total = scenarios_total = 1
+    features_passed = scenarios_passed = 1 if all_passed else 0
+    scenarios_failed = scenarios_total - scenarios_passed
+
+    assert statistics["scenarios"]["total"] == scenarios_total
+    assert statistics["scenarios"]["passed"] == scenarios_passed
+
+    assert statistics["steps"]["total"] == steps_total
+    assert statistics["steps"]["passed"] == steps_passed
+    assert statistics["steps"]["skipped"] == steps_skipped
+    assert statistics["steps"]["failed"] == steps_failed
+
+    assert statistics["features"]["total"] == features_total
+    assert statistics["features"]["passed"] == features_passed
+
     assert len(statistics["features"]["run"]) == 1
     feature = statistics["features"]["run"][0]
     feature_stats = feature["stats"]
-    for key, expected in {
-        "passed_steps": step_stats["passed"],
-        "failed_steps": step_stats["failed"],
-        "skipped_steps": step_stats["skipped"],
-        "total_steps": step_stats["total"],
-        "passed_scenarios": 1 if all_passed else 0,
-        "failed_scenarios": 0 if all_passed else 1,
-        "total_scenarios": 1,
-        "passed": all_passed is True,
-        "failed": all_passed is not True,
-    }.items():
-        assert feature_stats[key] == expected
+
+    assert feature_stats["passed_steps"] == steps_passed
+    assert feature_stats["failed_steps"] == steps_failed
+    assert feature_stats["skipped_steps"] == steps_skipped
+    assert feature_stats["total_steps"] == steps_total
+    assert feature_stats["passed_scenarios"] == scenarios_passed
+    assert feature_stats["failed_scenarios"] == scenarios_failed
+    assert feature_stats["total_scenarios"] == scenarios_total
+    assert feature_stats["passed"] == all_passed
+    assert feature_stats["failed"] == all_failed
+
     assert len(feature["elements"]) == 1
     scenario = feature["elements"][0]
     scenario_stats = scenario["stats"]
-    for key, expected in {
-        "passed_steps": step_stats["passed"],
-        "failed_steps": step_stats["failed"],
-        "skipped_steps": step_stats["skipped"],
-        "total_steps": step_stats["total"],
-        "passed": all_passed is True,
-        "failed": all_passed is not True,
-    }.items():
-        assert scenario_stats[key] == expected
+
+    assert scenario_stats["passed_steps"] == steps_passed
+    assert scenario_stats["failed_steps"] == steps_failed
+    assert scenario_stats["skipped_steps"] == steps_skipped
+    assert scenario_stats["total_steps"] == steps_total
+    assert scenario_stats["passed"] == all_passed
+    assert scenario_stats["failed"] == all_failed
+
     for step_details, step_def in zip(steps, scenario["steps"]):
         step_type, step_name, step_status = step_details
         assert step_def["type"] == step_type
@@ -141,7 +156,11 @@ class TestFeatureRunner(unittest.TestCase):
         core = Core()
         # And I have some step definitions
         importlib.import_module("test_data.steps.some_steps")
-        # And I have a feature object
+        # And I have a feature with one scenario of the following steps:
+        #   | step_type | step_text | step_status   |
+        #   | Given     | step_1    | passed        |
+        #   | When      | step_2    | passed        |
+        #   | Then      | step_3    | passed        |
         steps = (
             ("Given", "step_1", StepStatus.passed),
             ("When", "step_2", StepStatus.passed),
@@ -159,7 +178,11 @@ class TestFeatureRunner(unittest.TestCase):
         core = Core()
         # And I have some step definitions
         importlib.import_module("test_data.steps.some_steps")
-        # And I have a feature object
+        # And I have a feature with one scenario of the following steps:
+        #   | step_type | step_text | step_status   |
+        #   | Given     | step_1    | passed        |
+        #   | When      | step_2    | passed        |
+        #   | Then      | step_8    | failed        |
         steps = (
             ("Given", "step_1", StepStatus.passed),
             ("When", "step_2", StepStatus.passed),
@@ -177,11 +200,63 @@ class TestFeatureRunner(unittest.TestCase):
         core = Core()
         # And I have some step definitions
         importlib.import_module("test_data.steps.some_steps")
-        # And I have a feature object
+        # And I have a feature with one scenario of the following steps:
+        #   | step_type | step_text | step_status   |
+        #   | Given     | step_1    | passed        |
+        #   | When      | step_7    | failed        |
+        #   | Then      | step_8    | not reached   |
         steps = (
             ("Given", "step_1", StepStatus.passed),
             ("When", "step_7", StepStatus.failed),
             ("Then", "step_8", StepStatus.not_reached),
+        )
+        feature = given_i_have_a_feature_object(steps)
+        # When I run the feature
+        statistics = core.run_features(feature.copy())
+        # Then the output shows that the expected steps have been run
+        check_stats(statistics, steps)
+
+    def test_full_skip_last(self):
+        # Given I have Romaine's core
+        from romaine.core import Core
+        core = Core()
+        # And I have some step definitions
+        importlib.import_module("test_data.steps.some_steps")
+        # And I have a feature with one scenario of the following steps:
+        #   | step_type | step_text | step_status   |
+        #   | Given     | step_1    | passed        |
+        #   | When      | step_2    | passed        |
+        #   | Then      | step_3    | passed        |
+        #   | And       | step_9    | skipped       |
+        steps = (
+            ("Given", "step_1", StepStatus.passed),
+            ("When", "step_2", StepStatus.passed),
+            ("Then", "step_3", StepStatus.passed),
+            ("And", "step_9", StepStatus.skipped),
+        )
+        feature = given_i_have_a_feature_object(steps)
+        # When I run the feature
+        statistics = core.run_features(feature.copy())
+        # Then the output shows that the expected steps have been run
+        check_stats(statistics, steps)
+
+    def test_full_skip_second(self):
+        # Given I have Romaine's core
+        from romaine.core import Core
+        core = Core()
+        # And I have some step definitions
+        importlib.import_module("test_data.steps.some_steps")
+        # And I have a feature with one scenario of the following steps:
+        #   | step_type | step_text | step_status   |
+        #   | Given     | step_1    | passed        |
+        #   | And       | step_9    | skipped       |
+        #   | When      | step_2    | not reached   |
+        #   | Then      | step_3    | not reached   |
+        steps = (
+            ("Given", "step_1", StepStatus.passed),
+            ("And", "step_9", StepStatus.skipped),
+            ("When", "step_2", StepStatus.not_reached),
+            ("Then", "step_3", StepStatus.not_reached),
         )
         feature = given_i_have_a_feature_object(steps)
         # When I run the feature
