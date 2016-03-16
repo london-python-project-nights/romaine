@@ -1,3 +1,4 @@
+from romaine.exc import SkipTest
 from romaine.steps import Given, When, Then, Step, And
 
 
@@ -43,4 +44,4 @@ def step_8():
 
 @And('And step_9')
 def step_9():
-    pass
+    raise SkipTest
