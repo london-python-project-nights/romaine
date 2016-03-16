@@ -1,8 +1,13 @@
 from unittest import TestCase
 import importlib
 
+from tests.common import unload_test_data
+
 
 class TestStepFinding(TestCase):
+
+    def tearDown(self):
+        unload_test_data()
 
     def test_initial_state(self):
         # Given I have Romaine's core

@@ -4,8 +4,13 @@ Take a feature object, retrieve steps and run them all
 import importlib
 import unittest
 
+from tests.common import unload_test_data
+
 
 class TestFeatureRunner(unittest.TestCase):
+
+    def tearDown(self):
+        unload_test_data()
 
     def test_full(self):
         # Given I have Romaine's core
