@@ -1,5 +1,7 @@
 import os
+from romaine.logs import RomaineLogger
 from romaine.parser import Parser
+from romaine import runner
 
 
 class Core(object):
@@ -49,5 +51,8 @@ class Core(object):
 
         return feature_candidates
 
-    def run_feature(self, feature):
-        return {}
+    def run_features(self, *features):
+        with RomaineLogger() as logger:
+            for feature in features:
+                runner.run_feature(feature, self.steps, logger)
+        return logger.statistics
