@@ -263,3 +263,25 @@ class TestFeatureRunner(unittest.TestCase):
         statistics = core.run_features(feature.copy())
         # Then the output shows that the expected steps have been run
         check_stats(statistics, steps)
+
+    # def test_regex_steps(self):
+    #     # Given I have Romaine's core
+    #     from romaine.core import Core
+    #     core = Core()
+    #     # And I have some step definitions
+    #     importlib.import_module("test_data.steps.regex_steps")
+    #     # And I have a feature with one scenario of the following steps:
+    #     #   | step_type | step_text | step_status   |
+    #     #   | Given     | step_1    | passed        |
+    #     #   | When      | step_2    | not reached   |
+    #     #   | Then      | step_3    | not reached   |
+    #     steps = (
+    #         ("Given", "step_1", StepStatus.passed),
+    #         ("When", "step_2", StepStatus.passed),
+    #         ("Then", "step_3", StepStatus.passed),
+    #     )
+    #     feature = given_i_have_a_feature_object(steps)
+    #     # When I run the feature
+    #     statistics = core.run_features(feature.copy())
+    #     # Then the output shows that the expected steps have been run
+    #     check_stats(statistics, steps)

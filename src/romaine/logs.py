@@ -416,9 +416,14 @@ class AbstractRomaineLogger(object):
 
 class RomaineLogger(AbstractRomaineLogger):
 
-    def __init__(self):
+    def __init__(self, out_level=logging.DEBUG):
         super(RomaineLogger, self).__init__()
-        self._stdlib_logger = logging.Logger(str(self))
+        self._stdlib_logger = logging.getLogger(str(self))
+        self._stdlib_logger.setLevel(out_level)
+
+        handler = logging.StreamHandler()
+        handler.setLevel(out_level)
+        self._stdlib_logger.addHandler(handler)
 
         self._levels = {
             self.DEBUG: self._stdlib_logger.debug,

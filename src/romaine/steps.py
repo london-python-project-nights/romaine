@@ -1,3 +1,5 @@
+import re
+
 from romaine.core import Core
 
 
@@ -13,6 +15,7 @@ class Step(object):
                 name = name[len(prefix):]
         self.name = name.strip()
         self.func = None
+        self.regex = re.compile(self.name)
 
     def __call__(self, func):
         self.func = func
