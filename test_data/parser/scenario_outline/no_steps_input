@@ -1,0 +1,4 @@
+Scenario Outline:
+Examples:
+|book|location|
+|paperback|back cover|

@@ -1,0 +1,13 @@
+{
+  "step": {
+    "leading_comments_and_space": [],
+    "type": "When",
+    "text": "I call get_step on an empty list",
+    "multiline_arg": null,
+    "trailing_whitespace": []
+  },
+  "remaining": [],
+  "raw_input": [
+    "When I call get_step on an empty list"
+  ]
+}

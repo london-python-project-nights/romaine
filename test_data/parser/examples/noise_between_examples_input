@@ -1,0 +1,8 @@
+Examples: Our vital test
+|first|second|
+|1|2|
+
+Scenario Outline: Missing steps
+ Examples: This test is unimportant
+|first|second|
+|3|4|

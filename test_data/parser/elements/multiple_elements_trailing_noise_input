@@ -1,0 +1,16 @@
+Scenario:
+Given a paperback book
+When I look at the back cover
+Then I see the blurb
+Scenario Outline:
+Given a <book> book
+When I look at the <location>
+Then I see the blurb
+Examples:
+|book|location|
+|paperback|back cover|
+Missing this
+Scenario:
+Given a paperback book
+When I look at the back cover
+Then I see the blurb

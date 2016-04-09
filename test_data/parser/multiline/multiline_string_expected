@@ -1,0 +1,11 @@
+{
+  "type": "multiline_string",
+  "data": ["", "my pystring", ""],
+  "remaining": ["|not this|"],
+  "raw_input": [
+    "\"\"\"",
+    "my pystring",
+    "\"\"\"",
+    "|not this|"
+  ]
+}

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import unittest
 from tests import common
 
@@ -13,12 +14,6 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # We're doing a lot of long tests- don't limit the diff output length
         self.maxDiff = None
 
-    def tearDown(self):
-        """
-            Revert changes made during testing.
-        """
-        pass
-
     def test_getting_scenario_outline_no_input_modification(self):
         """
             Test that getting scenario outline doesn't change the input var.
@@ -26,39 +21,20 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_var = [
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
-        parser.section.get_element(input_var)
+        # When I call get_element with input from
+        # scenario_outline/basic_input
+        input_data = common.get_parser_input(
+            'scenario_outline/basic_input',
+        )
+
+        expected_data = deepcopy(input_data)
+
+        parser.section.get_element(input_data)
 
         # Then my input variable is not modified
         self.assertEqual(
-            input_var,
-            [
-                'Scenario Outline:',
-                'Given a <book> book',
-                'When I look at the <location>',
-                'Then I see the blurb',
-                'Examples:',
-                '|book|location|',
-                '|paperback|back cover|',
-            ],
+            input_data,
+            expected_data,
         )
 
     def test_basic_scenario_outline(self):
@@ -68,154 +44,46 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/basic_input
+        input_data = common.get_parser_input(
+            'scenario_outline/basic_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
+        # Then I see the results from
+        # scenario_outline/basic_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('scenario_outline/basic_expected'),
         )
 
     def test_basic_scenario_outline_without_examples(self):
         """
             Check we can get basic scenario outlines without examples.
         """
+        # Note: We want to be able to do this to allow for, e.g. populating
+        # scenario outlines based on hooks
+
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        # ] """
-        input_data = [
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/no_examples_input
+        input_data = common.get_parser_input(
+            'scenario_outline/no_examples_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
+        # Then I see the results from
+        # scenario_outline/no_examples_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/no_examples_expected',
+            ),
         )
 
     def test_basic_scenario_outline_with_leading_comment(self):
@@ -225,97 +93,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    '# Hello',
-        #    '',
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            '# Hello',
-            '',
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/leading_comment_input
+        input_data = common.get_parser_input(
+            'scenario_outline/leading_comment_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
-        # and leading comments and space of ['# Hello', '']
+        # Then I see the results from
+        # scenario_outline/leading_comment_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [
-                        '# Hello',
-                        '',
-                    ],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/leading_comment_expected',
+            ),
         )
 
     def test_basic_scenario_outline_with_trailing_space(self):
@@ -325,94 +117,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        #    '',
-        # ] """
-        input_data = [
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-            '',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/trailing_space_input
+        input_data = common.get_parser_input(
+            'scenario_outline/trailing_space_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'],
-        #   'trailing_whitespace': [''] }}
-        # ]
+        # Then I see the results from
+        # scenario_outline/trailing_space_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [
-                                '',
-                            ],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/trailing_space_expected',
+            ),
         )
 
     def test_basic_scenario_outline_leading_comment_and_trailing_space(self):
@@ -422,102 +141,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    '# Hello',
-        #    '',
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        #    '',
-        # ] """
-        input_data = [
-            '# Hello',
-            '',
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-            ''
-        ]
+        # When I call get_element with input from
+        # scenario_outline/leading_comment_trailing_space_input
+        input_data = common.get_parser_input(
+            'scenario_outline/leading_comment_trailing_space_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'],
-        #   'trailing_whitespace': [''] }}
-        # ]
-        # and leading comments and space of ['# Hello', '']
+        # Then I see the results from
+        # scenario_outline/leading_comment_trailing_space_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [
-                        '# Hello',
-                        '',
-                    ],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [
-                                '',
-                            ],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/leading_comment_trailing_space_expected',
+            ),
         )
 
     def test_basic_scenario_outline_no_steps(self):
@@ -527,56 +165,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            'Scenario Outline:',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/no_steps_input
+        input_data = common.get_parser_input(
+            'scenario_outline/no_steps_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
+        # Then I see the results from
+        # scenario_outline/no_steps_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/no_steps_expected',
+            ),
         )
 
     def test_basic_scenario_outline_with_description(self):
@@ -586,90 +189,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline: Happy outline',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            'Scenario Outline: Happy outline',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/with_description_input
+        input_data = common.get_parser_input(
+            'scenario_outline/with_description_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline described as ' Happy outline'
-        # with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
+        # Then I see the results from
+        # scenario_outline/with_description_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': ' Happy outline',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/with_description_expected',
+            ),
         )
 
     def test_basic_scenario_outline_with_tags(self):
@@ -679,94 +213,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    '@tagcloud',
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            '@tagcloud',
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/with_tags_input
+        input_data = common.get_parser_input(
+            'scenario_outline/with_tags_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
-        # and tags: ['tagcloud']
+        # Then I see the results from
+        # scenario_outline/with_tags_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [
-                        'tagcloud'
-                    ],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/with_tags_expected',
+            ),
         )
 
     def test_basic_scenario_outline_with_tag_and_comment(self):
@@ -776,99 +237,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    '# Try this',
-        #    '@trytag',
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            '# Try this',
-            '@trytag',
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/with_tags_and_comment_input
+        input_data = common.get_parser_input(
+            'scenario_outline/with_tags_and_comment_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
-        # and leading comments and space of ['# Try this']
-        # and tags: ['trytag']
+        # Then I see the results from
+        # scenario_outline/with_tags_and_comment_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [
-                        'trytag',
-                    ],
-                    'description': '',
-                    'leading_comments_and_space': [
-                        '# Try this',
-                    ],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/with_tags_and_comment_expected',
+            ),
         )
 
     def test_basic_scenario_outline_with_trailing_outline(self):
@@ -878,113 +261,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        #    'Scenario Outline:',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/trailing_outline_input
+        input_data = common.get_parser_input(
+            'scenario_outline/trailing_outline_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # ]
-        # and remaining: [ 'Scenario Outline:', 'Given a <book> book',
-        # 'When I look at the <location>', 'Then I see the blurb',
-        # 'Examples:', '|book|location|', '|paperback|back cover|' ]
+        # Then I see the results from
+        # scenario_outline/trailing_outline_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [
-                    'Scenario Outline:',
-                    'Given a <book> book',
-                    'When I look at the <location>',
-                    'Then I see the blurb',
-                    'Examples:',
-                    '|book|location|',
-                    '|paperback|back cover|',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/trailing_outline_expected',
+            ),
         )
 
     def test_do_not_get_scenario_outline_with_leading_noise(self):
@@ -994,49 +285,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Ignore me',
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        # ] """
-        input_data = [
-            'Ignore me',
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/leading_noise_input
+        input_data = common.get_parser_input(
+            'scenario_outline/leading_noise_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see no scenario outline with remaining: [ 'Ignore me',
-        # 'Scenario Outline:', 'Given a <book> book',
-        # 'When I look at the <location>', 'Then I see the blurb',
-        # 'Examples:', '|book|location|', '|paperback|back cover|' ]
+        # Then I see the results from
+        # scenario_outline/leading_noise_expected
         self.assertEqual(
             result,
-            {
-                'element': None,
-                'remaining': [
-                    'Ignore me',
-                    'Scenario Outline:',
-                    'Given a <book> book',
-                    'When I look at the <location>',
-                    'Then I see the blurb',
-                    'Examples:',
-                    '|book|location|',
-                    '|paperback|back cover|',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/leading_noise_expected',
+            ),
         )
 
     def test_scenario_outline_with_two_examples(self):
@@ -1046,114 +309,21 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element on a list containing
-        # """[
-        #    'Scenario Outline:',
-        #    'Given a <book> book',
-        #    'When I look at the <location>',
-        #    'Then I see the blurb',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|paperback|back cover|',
-        #    'Examples:',
-        #    '|book|location|',
-        #    '|hardback|inside of the front cover|',
-        # ] """
-        input_data = [
-            'Scenario Outline:',
-            'Given a <book> book',
-            'When I look at the <location>',
-            'Then I see the blurb',
-            'Examples:',
-            '|book|location|',
-            '|paperback|back cover|',
-            'Examples:',
-            '|book|location|',
-            '|hardback|inside of the front cover|',
-        ]
+        # When I call get_element with input from
+        # scenario_outline/two_examples_sections_input
+        input_data = common.get_parser_input(
+            'scenario_outline/two_examples_sections_input',
+        )
+
         result = parser.section.get_element(input_data)
 
-        # Then I see a scenario outline with steps: [
-        # { 'type': 'Given', 'text': 'a <book> book' },
-        # { 'type': 'When', 'text': 'I look at the <location>' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # with examples: [
-        # { 'columns': { 'book': ['paperback'], 'location': ['back cover'] }}
-        # { 'columns': { 'book': ['hardback'],
-        #   'location': ['inside of the front cover'] }}
-        # ]
+        # Then I see the results from
+        # scenario_outline/two_examples_sections_expected
         self.assertEqual(
             result,
-            {
-                'element': {
-                    'type': 'scenario outline',
-                    'tags': [],
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'examples': [
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'paperback',
-                                ],
-                                'location': [
-                                    'back cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['paperback', 'back cover'],
-                            ],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'description': '',
-                            'columns': {
-                                'book': [
-                                    'hardback',
-                                ],
-                                'location': [
-                                    'inside of the front cover',
-                                ],
-                            },
-                            'trailing_whitespace': [],
-                            'table': [
-                                ['book', 'location'],
-                                ['hardback', 'inside of the front cover'],
-                            ],
-                        },
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a <book> book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the <location>',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'scenario_outline/two_examples_sections_expected',
+            ),
         )
 
     def test_do_not_get_scenario_from_nothing(self):
@@ -1163,15 +333,17 @@ class TestScenarioOutlinesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_element with an empty list
-        result = parser.section.get_element([])
+        # When I call get_element with input from
+        # scenario_outline/empty_input
+        input_data = common.get_parser_input(
+            'scenario_outline/empty_input',
+        )
 
-        # Then I see no scenario outline
+        result = parser.section.get_element(input_data)
+
+        # Then I see the results from
+        # scenario_outline/empty_expected
         self.assertEqual(
             result,
-            {
-                'element': None,
-                'remaining': [],
-                'raw_input': [],
-            },
+            common.get_parser_output('scenario_outline/empty_expected'),
         )

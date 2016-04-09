@@ -1,0 +1,11 @@
+{
+  "comments_and_space": [],
+  "remaining": [
+    "This is not a comment",
+    "# Happy comment"
+  ],
+  "raw_input": [
+    "This is not a comment",
+    "# Happy comment"
+  ]
+}

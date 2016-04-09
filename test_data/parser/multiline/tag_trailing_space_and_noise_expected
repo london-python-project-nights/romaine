@@ -1,0 +1,13 @@
+{
+  "tags": [
+    "my_tag"
+  ],
+  "remaining": [
+    "More tests"
+  ],
+  "raw_input": [
+    "@my_tag",
+    "  \t ",
+    "More tests"
+  ]
+}

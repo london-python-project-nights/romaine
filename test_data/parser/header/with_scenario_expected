@@ -1,0 +1,26 @@
+{
+  "header": [
+    "This is a header",
+    "It heads the feature nicely",
+    "If the code works well",
+    ""
+  ],
+  "remaining": [
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb",
+    "More stuff"
+  ],
+  "raw_input": [
+    "This is a header",
+    "It heads the feature nicely",
+    "If the code works well",
+    "",
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb",
+    "More stuff"
+  ]
+}

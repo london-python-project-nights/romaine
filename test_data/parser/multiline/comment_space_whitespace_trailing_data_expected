@@ -1,0 +1,14 @@
+{
+  "comments_and_space": [
+    "# Happy comment",
+    "   \t  "
+  ],
+  "remaining": [
+    "More tests"
+  ],
+  "raw_input": [
+    "# Happy comment",
+    "   \t  ",
+    "More tests"
+  ]
+}

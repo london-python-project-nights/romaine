@@ -1,0 +1,17 @@
+{
+  "element": null,
+  "remaining": [
+    "Broken",
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb"
+  ],
+  "raw_input": [
+    "Broken",
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb"
+  ]
+}

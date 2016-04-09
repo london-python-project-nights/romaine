@@ -1,0 +1,11 @@
+{
+  "pythonish_string": ["", "this", "is a", "test", ""],
+  "remaining": [],
+  "raw_input": [
+    "\"\"\"",
+    "this",
+    "is a",
+    "test",
+    "\"\"\""
+  ]
+}

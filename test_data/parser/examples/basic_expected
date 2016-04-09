@@ -1,0 +1,21 @@
+{
+  "example": {
+    "leading_comments_and_space": [],
+    "trailing_whitespace": [],
+    "description": "",
+    "columns": {
+      "one": ["1"],
+      "two": ["2"]
+    },
+    "table": [
+      ["one", "two"],
+      ["1", "2"]
+    ]
+  },
+  "remaining": [],
+  "raw_input": [
+    "Examples:",
+    "|one|two|",
+    "|1|2|"
+  ]
+}

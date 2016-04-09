@@ -1,0 +1,26 @@
+{
+  "example": {
+    "leading_comments_and_space": [
+      "#Some comment about the test",
+      "     "
+    ],
+    "trailing_whitespace": [],
+    "description": " Our vital test",
+    "columns": {
+      "first": ["1"],
+      "second": ["2"]
+    },
+    "table": [
+      ["first", "second"],
+      ["1", "2"]
+    ]
+  },
+  "remaining": [],
+  "raw_input": [
+    "#Some comment about the test",
+    "     ",
+    "Examples: Our vital test",
+    "|first|second|",
+    "|1|2|"
+  ]
+}

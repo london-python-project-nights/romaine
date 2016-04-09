@@ -1,0 +1,15 @@
+{
+  "example": null,
+  "remaining": [
+    "Examples:",
+    "# Misplaced comment",
+    "|one|two|",
+    "|1|2|"
+  ],
+  "raw_input": [
+    "Examples:",
+    "# Misplaced comment",
+    "|one|two|",
+    "|1|2|"
+  ]
+}

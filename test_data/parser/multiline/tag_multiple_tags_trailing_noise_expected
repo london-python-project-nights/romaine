@@ -1,0 +1,15 @@
+{
+  "tags": [
+    "my_tag",
+    "moretag"
+  ],
+  "remaining": [
+    "Another test"
+  ],
+  "raw_input": [
+    "@my_tag",
+    "@moretag",
+    "",
+    "Another test"
+  ]
+}
