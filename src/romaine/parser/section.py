@@ -36,6 +36,8 @@ class SectionParser(object):
                     description - The description of the examples
                     columns - A dict containing:
                         each column name: [list of this column]
+                    raw - The raw example, including tables but not space or
+                          comments.
                 remaining - Any lines not consumed by this function
                 raw_input - The input data for this function
         """
@@ -59,12 +61,17 @@ class SectionParser(object):
         if section_start['type'] == 'examples':
             description = section_start['description']
 
+            raw = [lines[0]]
             section_start_line = lines[0]
             lines = lines[1:]
 
             table = self.multiline.get_table(lines)
 
             if table['table'] is not None:
+                if len(table['remaining']) > 0:
+                    raw.extend(lines[0:-len(table['remaining'])])
+                else:
+                    raw.extend(lines)
                 lines = table['remaining']
                 table = table['table']
 
@@ -92,6 +99,7 @@ class SectionParser(object):
                     'table': table,
                     'leading_comments_and_space': leading_comments_and_space,
                     'trailing_whitespace': trailing_space,
+                    'raw': raw,
                 }
 
         if results['example'] is None:
@@ -180,10 +188,10 @@ class SectionParser(object):
             section = self.simple.get_section_start(lines[0])
             element_type = section['type']
             description = section['description']
+            raw = [lines[0]]
+            lines = lines[1:]
         else:
             element_type = None
-
-        lines = lines[1:]
 
         if element_type in ('scenario', 'scenario outline'):
             steps = self.step.get_steps(lines)
@@ -196,6 +204,7 @@ class SectionParser(object):
                 'tags': tags,
                 'description': description,
                 'steps': steps,
+                'raw': raw,
             }
         else:
             element = None
@@ -260,10 +269,12 @@ class SectionParser(object):
 
             Returns:
             A dict containing:
-                example - None if none found, otherwise a dict containing:
+                background - None if none found, otherwise a dict containing:
                     leading_comments_and_space - Leading comments and space
                     description - The description of the background
                     steps - A list of steps as retrieved by get_steps
+                    raw - The raw background text not including steps,
+                          comments, etc.
                 remaining - Any lines not consumed by this function
                 raw_input - The input data for this function
         """
@@ -287,6 +298,7 @@ class SectionParser(object):
         if section_start['type'] == 'background':
             description = section_start['description']
 
+            raw = [lines[0]]
             lines = lines[1:]
 
             steps = self.step.get_steps(lines)
@@ -297,6 +309,7 @@ class SectionParser(object):
                 'description': description,
                 'steps': steps,
                 'leading_comments_and_space': leading_comments_and_space,
+                'raw': raw,
             }
 
         if results['background'] is None:

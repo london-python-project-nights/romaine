@@ -1,9 +1,15 @@
 {
   "background": {
+    "raw": [
+      "Background:"
+    ],
     "description": "",
     "leading_comments_and_space": [],
     "steps": [
       {
+        "raw": [
+          "Given a paperback book"
+        ],
         "leading_comments_and_space": [],
         "type": "Given",
         "text": "a paperback book",
@@ -11,6 +17,9 @@
         "trailing_whitespace": []
       },
       {
+        "raw": [
+          "When I look at the back cover"
+        ],
         "leading_comments_and_space": [],
         "type": "When",
         "text": "I look at the back cover",
@@ -18,6 +27,9 @@
         "trailing_whitespace": []
       },
       {
+        "raw": [
+          "Then I see the blurb"
+        ],
         "leading_comments_and_space": [],
         "type": "Then",
         "text": "I see the blurb",

@@ -61,6 +61,7 @@ class StepParser(object):
         if len(lines) > 0:
             step_line = lines.pop()
             step = self.simple.get_step(step_line)
+            raw = [step_line]
 
         if step is None:
             if step_line is not None:
@@ -76,6 +77,10 @@ class StepParser(object):
                 lines.reverse()
                 multiline = self.multiline.get_multiline_arg(lines)
                 if multiline['type'] is not None:
+                    if len(multiline['remaining']) > 0:
+                        raw.extend(lines[0:-len(multiline['remaining'])])
+                    else:
+                        raw.extend(lines)
                     multiline_arg = {
                         'type': multiline['type'],
                         'data': multiline['data'],
@@ -96,6 +101,7 @@ class StepParser(object):
                 'text': step['text'],
                 'multiline_arg': multiline_arg,
                 'trailing_whitespace': trailing_whitespace,
+                'raw': raw,
             }
 
         # Fix line ordering

@@ -1,5 +1,10 @@
 {
   "example": {
+    "raw": [
+      "Examples:",
+      "|one|two|",
+      "|1|2|"
+    ],
     "leading_comments_and_space": [],
     "trailing_whitespace": [],
     "description": "",

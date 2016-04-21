@@ -1,5 +1,8 @@
 {
   "element": {
+    "raw": [
+      "Scenario:"
+    ],
     "type": "scenario",
     "tags": [],
     "description": "",

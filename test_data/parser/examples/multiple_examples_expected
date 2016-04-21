@@ -1,6 +1,11 @@
 {
   "examples": [
     {
+      "raw": [
+        "Examples: Our vital test",
+        "|first|second|",
+        "|1|2|"
+      ],
       "leading_comments_and_space": [],
       "trailing_whitespace": [
         ""
@@ -16,6 +21,11 @@
       ]
     },
     {
+      "raw": [
+        " Examples: This test is unimportant",
+        "|first|second|",
+        "|3|4|"
+      ],
       "leading_comments_and_space": [],
       "trailing_whitespace": [],
       "description": " This test is unimportant",

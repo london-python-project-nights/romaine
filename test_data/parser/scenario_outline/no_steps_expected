@@ -1,11 +1,19 @@
 {
   "element": {
+    "raw": [
+      "Scenario Outline:"
+    ],
     "type": "scenario outline",
     "tags": [],
     "description": "",
     "leading_comments_and_space": [],
     "examples": [
       {
+        "raw": [
+          "Examples:",
+          "|book|location|",
+          "|paperback|back cover|"
+        ],
         "leading_comments_and_space": [],
         "description": "",
         "columns": {

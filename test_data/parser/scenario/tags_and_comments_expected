@@ -1,5 +1,8 @@
 {
   "element": {
+    "raw": [
+      "Scenario:"
+    ],
     "type": "scenario",
     "tags": [
       "by_the_book",
@@ -15,21 +18,30 @@
         "type": "Given",
         "text": "a paperback book",
         "multiline_arg": null,
-        "trailing_whitespace": []
+        "trailing_whitespace": [],
+        "raw": [
+          "Given a paperback book"
+        ]
       },
       {
         "leading_comments_and_space": [],
         "type": "When",
         "text": "I look at the back cover",
         "multiline_arg": null,
-        "trailing_whitespace": []
+        "trailing_whitespace": [],
+        "raw": [
+          "When I look at the back cover"
+        ]
       },
       {
         "leading_comments_and_space": [],
         "type": "Then",
         "text": "I see the blurb",
         "multiline_arg": null,
-        "trailing_whitespace": []
+        "trailing_whitespace": [],
+        "raw": [
+          "Then I see the blurb"
+        ]
       }
     ]
   },

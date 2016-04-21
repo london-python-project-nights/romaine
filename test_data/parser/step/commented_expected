@@ -1,5 +1,8 @@
 {
   "step": {
+    "raw": [
+      "    When I call get_step on an empty list"
+    ],
     "leading_comments_and_space": [
       "    # Check for empty steps",
       "    "

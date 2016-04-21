@@ -1,6 +1,12 @@
 {
   "steps": [
     {
+      "raw": [
+       "When I call get_step with a string like this",
+       "\"\"\"",
+       "    multiline string",
+       "\"\"\""
+      ],
       "leading_comments_and_space": [],
       "type": "When",
       "text": "I call get_step with a string like this",
@@ -11,6 +17,9 @@
       "trailing_whitespace": [""]
     },
     {
+      "raw": [
+        "Then I am happy to see this step"
+      ],
       "leading_comments_and_space": [
         "# Test second step",
         ""

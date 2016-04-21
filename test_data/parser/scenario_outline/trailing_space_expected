@@ -1,11 +1,19 @@
 {
   "element": {
+    "raw": [
+      "Scenario Outline:"
+    ],
     "type": "scenario outline",
     "tags": [],
     "description": "",
     "leading_comments_and_space": [],
     "examples": [
       {
+        "raw": [
+          "Examples:",
+          "|book|location|",
+          "|paperback|back cover|"
+        ],
         "leading_comments_and_space": [],
         "description": "",
         "columns": {
@@ -31,21 +39,30 @@
         "type": "Given",
         "text": "a <book> book",
         "multiline_arg": null,
-        "trailing_whitespace": []
+        "trailing_whitespace": [],
+        "raw": [
+          "Given a <book> book"
+        ]
       },
       {
         "leading_comments_and_space": [],
         "type": "When",
         "text": "I look at the <location>",
         "multiline_arg": null,
-        "trailing_whitespace": []
+        "trailing_whitespace": [],
+        "raw": [
+          "When I look at the <location>"
+        ]
       },
       {
         "leading_comments_and_space": [],
         "type": "Then",
         "text": "I see the blurb",
         "multiline_arg": null,
-        "trailing_whitespace": []
+        "trailing_whitespace": [],
+        "raw": [
+          "Then I see the blurb"
+        ]
       }
     ]
   },
