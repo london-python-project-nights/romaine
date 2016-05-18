@@ -1,0 +1,6 @@
+Feature: Test a features
+Scenario: Some scenario                   
+Given a cake
+When I break this
+Then I do something                       
+This wont work.

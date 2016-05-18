@@ -1,3 +1,4 @@
+from copy import deepcopy
 import unittest
 from tests import common
 
@@ -13,12 +14,6 @@ class TestStepsParser(unittest.TestCase):
         # We're doing a lot of long tests- don't limit the diff output length
         self.maxDiff = None
 
-    def tearDown(self):
-        """
-            Revert changes made during testing.
-        """
-        pass
-
     def test_getting_step_no_input_modification(self):
         """
             Test that getting a step doesn't change the input var.
@@ -26,27 +21,17 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing
-        # """[
-        #    '    # Check for empty steps',
-        #    '    ',
-        #    '    When I call get_step on an empty list',
-        # ] """
-        input_var = [
-            '    # Check for empty steps',
-            '    ',
-            '    When I call get_step on an empty list',
-        ]
-        parser.step.get_step(input_var)
+        # When I call get_step with input from step/basic_input
+        input_data = common.get_parser_input('step/basic_input')
+
+        expected_data = deepcopy(input_data)
+
+        parser.step.get_step(input_data)
 
         # Then my input variable is not modified
         self.assertEqual(
-            input_var,
-            [
-                '    # Check for empty steps',
-                '    ',
-                '    When I call get_step on an empty list',
-            ],
+            input_data,
+            expected_data,
         )
 
     def test_getting_raw_step(self):
@@ -56,30 +41,15 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing
-        # """[
-        #     'When I call get_step on an empty list'
-        # ] """
-        input_data = [
-            'When I call get_step on an empty list',
-        ]
+        # When I call get_step with input from step/basic_input
+        input_data = common.get_parser_input('step/basic_input')
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step with type=When and
-        # text='I call get_step on an empty list' and nothing remaining
+        # Then I see the results from step/basic_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step on an empty list',
-                    'multiline_arg': None,
-                    'trailing_whitespace': [],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/basic_expected'),
         )
 
     def test_getting_commented_step(self):
@@ -89,70 +59,33 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing
-        # """[
-        #     '    # Check for empty steps',
-        #     '    ',
-        #     'When I call get_step on an empty list'
-        # ] """
-        input_data = [
-            '    # Check for empty steps',
-            '    ',
-            '    When I call get_step on an empty list',
-        ]
+        # When I call get_step with input from step/commented_input
+        input_data = common.get_parser_input('step/commented_input')
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step with type=When and
-        # text='I call get_step on an empty list',
-        # leading_comments_and_space=['    # Check for empty steps',
-        # '    '], and nothing remaining
+        # Then I see the results from step/commented_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [
-                        '    # Check for empty steps',
-                        '    ',
-                    ],
-                    'type': 'When',
-                    'text': 'I call get_step on an empty list',
-                    'multiline_arg': None,
-                    'trailing_whitespace': [],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/commented_expected'),
         )
 
-    def test_get_step_empty(self):
+    def test_get_step_leading_noise(self):
         """
             Confirm that we get nothing when we don't start with a step.
         """
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing:
-        # """[
-        #     'This is not a real step.',
-        #     'When I call get_step on an empty list',
-        # ] """
-        input_data = [
-            'This is not a real step.',
-            'When I call get_step on an empty list',
-        ]
+        # When I call get_step with input from step/leading_noise_input
+        input_data = common.get_parser_input('step/leading_noise_input')
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is no step, with the original list remaining
+        # Then I see the results from step/leading_noise_expected
         self.assertEqual(
             result,
-            {
-                'step': None,
-                'remaining': [
-                    'This is not a real step.',
-                    'When I call get_step on an empty list',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/leading_noise_expected'),
         )
 
     def test_get_step_with_table(self):
@@ -162,36 +95,15 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing:
-        # """[
-        #     'When I call get_step with a table like this',
-        #     '|this table|'
-        # ] """
-        input_data = [
-            'When I call get_step with a table like this',
-            '|this table|',
-        ]
+        # When I call get_step with input from step/with_table_input
+        input_data = common.get_parser_input('step/with_table_input')
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step of type=When with
-        # text='I call get_step with a table like this', and a multiline_arg
-        # of type=table with [['this table']], and nothing remaining
+        # Then I see the results from step/with_table_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step with a table like this',
-                    'multiline_arg': {
-                        'type': 'table',
-                        'data': [['this table']],
-                    },
-                    'trailing_whitespace': [],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/with_table_expected'),
         )
 
     def test_get_step_with_pythonish_string(self):
@@ -201,41 +113,15 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing:
-        # """[
-        #     'When I call get_step with a string like this',
-        #     '"""'
-        #     '    multiline string'
-        #     '"""'
-        # ] """
-        input_data = [
-            'When I call get_step with a string like this',
-            '"""',
-            '    multiline string',
-            '"""',
-        ]
+        # When I call get_step with input from step/with_string_input
+        input_data = common.get_parser_input('step/with_string_input')
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step of type=When with
-        # text='I call get_step with a string like this', and a multiline_arg
-        # of type=multiline_string with ['', '    multiline string', ''],
-        # and nothing remaining
+        # Then I see the results from step/with_string_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step with a string like this',
-                    'multiline_arg': {
-                        'type': 'multiline_string',
-                        'data': ['', '    multiline string', ''],
-                    },
-                    'trailing_whitespace': [],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/with_string_expected'),
         )
 
     def test_get_step_with_divorced_multiline_arg(self):
@@ -245,43 +131,18 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing:
-        # """[
-        #     'When I call get_step with a string like this',
-        #     '"""'
-        #     '    multiline string'
-        #     '"""'
-        # ] """
-        input_data = [
-            'When I call get_step with a string like this',
-            '',
-            '"""',
-            '    multiline string',
-            '"""',
-        ]
+        # When I call get_step with input from
+        # step/with_space_then_string_input
+        input_data = common.get_parser_input(
+            'step/with_space_then_string_input'
+        )
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step of type=When with
-        # text='I call get_step with a string like this', and
-        # trailing_whitespace=[''] and ['"""', '    multiline string', '"""']
-        # remaining
+        # Then I see the results from step/with_space_then_string_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step with a string like this',
-                    'multiline_arg': None,
-                    'trailing_whitespace': [''],
-                },
-                'remaining': [
-                    '"""',
-                    '    multiline string',
-                    '"""',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/with_space_then_string_expected'),
         )
 
     def test_get_step_with_multiline_arg_and_trailing_whitespace(self):
@@ -291,45 +152,21 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing:
-        # """[
-        #     'When I call get_step with a string like this',
-        #     '"""'
-        #     '    multiline string'
-        #     '"""'
-        #     '',
-        #     '  \t',
-        # ] """
-        input_data = [
-            'When I call get_step with a string like this',
-            '"""',
-            '    multiline string',
-            '"""',
-            '',
-            '  \t',
-        ]
+        # When I call get_step with input from
+        # step/multiline_arg_trailing_space_input
+        input_data = common.get_parser_input(
+            'step/multiline_arg_trailing_space_input'
+        )
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step of type=When with
-        # text='I call get_step with a string like this', and a multiline_arg
-        # of type=multiline_string with ['', '    multiline string', ''],
-        # trailing_whitespace=['', '  \t'], and nothing remaining
+        # Then I see the results from
+        # step/multiline_arg_trailing_space_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step with a string like this',
-                    'multiline_arg': {
-                        'type': 'multiline_string',
-                        'data': ['', '    multiline string', ''],
-                    },
-                    'trailing_whitespace': ['', '  \t'],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'step/multiline_arg_trailing_space_expected',
+            ),
         )
 
     def test_get_step_with_trailing_step(self):
@@ -339,55 +176,19 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on a list containing:
-        # """[
-        #     '# Test first step
-        #     'When I call get_step with a string like this',
-        #     '"""'
-        #     '    multiline string'
-        #     '"""'
-        #     '',
-        #     '# Test second step',
-        #     '',
-        #     'Then I am happy not to see this as a step yet',
-        # ] """
-        input_data = [
-            'When I call get_step with a string like this',
-            '"""',
-            '    multiline string',
-            '"""',
-            '',
-            '# Test second step',
-            '',
-            'Then I am happy not to see this as a step yet',
-        ]
+        # When I call get_step with input from
+        # step/trailing_step_input
+        input_data = common.get_parser_input(
+            'step/trailing_step_input'
+        )
+
         result = parser.step.get_step(input_data)
 
-        # Then the result is a step of type=When with
-        # text='I call get_step with a string like this', and a multiline_arg
-        # of type=multiline_string with ['', '    multiline string', ''],
-        # trailing_whitespace=[''], and ['# Test second step', '',
-        # 'Then I am happy not to see this as a step yet'] remaining
+        # Then I see the results from
+        # step/trailing_step_expected
         self.assertEqual(
             result,
-            {
-                'step': {
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step with a string like this',
-                    'multiline_arg': {
-                        'type': 'multiline_string',
-                        'data': ['', '    multiline string', ''],
-                    },
-                    'trailing_whitespace': [''],
-                },
-                'remaining': [
-                    '# Test second step',
-                    '',
-                    'Then I am happy not to see this as a step yet',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/trailing_step_expected'),
         )
 
     def test_get_no_step_from_no_lines(self):
@@ -397,48 +198,19 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_step on no lines
-        result = parser.step.get_step([])
-
-        # Then the result is no step, with the original list remaining
-        self.assertEqual(
-            result,
-            {
-                'step': None,
-                'remaining': [],
-                'raw_input': [],
-            },
+        # When I call get_step with input from
+        # step/empty_input
+        input_data = common.get_parser_input(
+            'step/empty_input'
         )
 
-    def test_fail_to_get_steps(self):
-        """
-            Confirm we get no steps with leading noise.
-        """
-        # Given I have Romaine core's parser
-        parser = common.get_romaine_parser()
+        result = parser.step.get_step(input_data)
 
-        # When I call get_steps on a list containing:
-        # """[
-        #     'This is not a real step.',
-        #     'When I call get_step on an empty list',
-        # ] """
-        input_data = [
-            'This is not a real step.',
-            'When I call get_step on an empty list',
-        ]
-        result = parser.step.get_steps(input_data)
-
-        # Then the result is no steps, with the original list remaining
+        # Then I see the results from
+        # step/empty_expected
         self.assertEqual(
             result,
-            {
-                'steps': [],
-                'remaining': [
-                    'This is not a real step.',
-                    'When I call get_step on an empty list',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('step/empty_expected'),
         )
 
     def test_getting_steps_no_input_modification(self):
@@ -448,45 +220,39 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_steps on a list containing
-        # """[
-        #    'When I call get_step with a string like this',
-        #    '"""',
-        #    '    multiline string',
-        #    '"""',
-        #    '',
-        #    '# Test second step',
-        #    '',
-        #    'Then I am happy to see this step',
-        #    'No more diagonal lines',
-        # ] """
-        input_var = [
-            'When I call get_step with a string like this',
-            '"""',
-            '    multiline string',
-            '"""',
-            '',
-            '# Test second step',
-            '',
-            'Then I am happy to see this step',
-            'No more diagonal lines',
-        ]
-        parser.step.get_steps(input_var)
+        # When I call get_steps with input from steps/leading_noise_input
+        input_data = common.get_parser_input('steps/leading_noise_input')
+
+        expected_data = deepcopy(input_data)
+
+        parser.step.get_steps(input_data)
 
         # Then my input variable is not modified
         self.assertEqual(
-            input_var,
-            [
-                'When I call get_step with a string like this',
-                '"""',
-                '    multiline string',
-                '"""',
-                '',
-                '# Test second step',
-                '',
-                'Then I am happy to see this step',
-                'No more diagonal lines',
-            ],
+            input_data,
+            expected_data,
+        )
+
+    def test_fail_to_get_steps(self):
+        """
+            Confirm we get no steps with leading noise.
+        """
+        # Given I have Romaine core's parser
+        parser = common.get_romaine_parser()
+
+        # When I call get_steps with input from
+        # steps/leading_noise_input
+        input_data = common.get_parser_input(
+            'steps/leading_noise_input'
+        )
+
+        result = parser.step.get_steps(input_data)
+
+        # Then I see the results from
+        # steps/leading_noise_expected
+        self.assertEqual(
+            result,
+            common.get_parser_output('steps/leading_noise_expected'),
         )
 
     def test_get_steps_single_step(self):
@@ -496,36 +262,19 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_steps on a list containing:
-        # """[
-        #     'When I call get_step with a table like this',
-        #     '|this table|'
-        # ] """
-        input_data = [
-            'When I call get_step with a table like this',
-            '|this table|',
-        ]
+        # When I call get_steps with input from
+        # steps/one_step_input
+        input_data = common.get_parser_input(
+            'steps/one_step_input'
+        )
+
         result = parser.step.get_steps(input_data)
 
-        # Then the result is a single step of type=When with
-        # text='I call get_step with a table like this', and a multiline_arg
-        # of type=table with [['this table']], and nothing remaining
+        # Then I see the results from
+        # steps/one_step_expected
         self.assertEqual(
             result,
-            {
-                'steps': [{
-                    'leading_comments_and_space': [],
-                    'type': 'When',
-                    'text': 'I call get_step with a table like this',
-                    'multiline_arg': {
-                        'type': 'table',
-                        'data': [['this table']],
-                    },
-                    'trailing_whitespace': [],
-                }],
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('steps/one_step_expected'),
         )
 
     def test_get_two_steps(self):
@@ -535,66 +284,39 @@ class TestStepsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_steps on a list containing:
-        # """[
-        #     '# Test first step
-        #     'When I call get_step with a string like this',
-        #     '"""'
-        #     '    multiline string'
-        #     '"""'
-        #     '',
-        #     '# Test second step',
-        #     '',
-        #     'Then I am happy not to see this as a step yet',
-        # ] """
-        input_data = [
-            'When I call get_step with a string like this',
-            '"""',
-            '    multiline string',
-            '"""',
-            '',
-            '# Test second step',
-            '',
-            'Then I am happy to see this step',
-            'No more diagonal lines',
-        ]
+        # When I call get_steps with input from
+        # steps/two_steps_input
+        input_data = common.get_parser_input(
+            'steps/two_steps_input'
+        )
+
         result = parser.step.get_steps(input_data)
 
-        # Then the result is two steps: type=When with
-        # text='I call get_step with a string like this', and a multiline_arg
-        # of type=multiline_string with ['', '    multiline string', ''],
-        # trailing_whitespace=['']; type=Then with
-        # text='I am happy to see this step',
-        # leading_comments_and_space of ['# Test second step', ''];
-        # and ['No more diagonal lines'] remaining
+        # Then I see the results from
+        # steps/two_steps_expected
         self.assertEqual(
             result,
-            {
-                'steps': [
-                    {
-                        'leading_comments_and_space': [],
-                        'type': 'When',
-                        'text': 'I call get_step with a string like this',
-                        'multiline_arg': {
-                            'type': 'multiline_string',
-                            'data': ['', '    multiline string', ''],
-                        },
-                        'trailing_whitespace': [''],
-                    },
-                    {
-                        'leading_comments_and_space': [
-                            '# Test second step',
-                            '',
-                        ],
-                        'type': 'Then',
-                        'text': 'I am happy to see this step',
-                        'multiline_arg': None,
-                        'trailing_whitespace': [],
-                    },
-                ],
-                'remaining': [
-                    'No more diagonal lines',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('steps/two_steps_expected'),
+        )
+
+    def test_get_no_steps_from_no_lines(self):
+        """
+            Confirm that we get no steps from no lines.
+        """
+        # Given I have Romaine core's parser
+        parser = common.get_romaine_parser()
+
+        # When I call get_steps with input from
+        # step/empty_input
+        input_data = common.get_parser_input(
+            'steps/empty_input'
+        )
+
+        result = parser.step.get_steps(input_data)
+
+        # Then I see the results from
+        # steps/empty_expected
+        self.assertEqual(
+            result,
+            common.get_parser_output('steps/empty_expected'),
         )

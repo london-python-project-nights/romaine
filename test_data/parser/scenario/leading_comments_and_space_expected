@@ -1,0 +1,55 @@
+{
+  "element": {
+    "raw": [
+      "Scenario:"
+    ],
+    "type": "scenario",
+    "tags": [],
+    "description": "",
+    "leading_comments_and_space": [
+      "# Helpful comment",
+      ""
+    ],
+    "steps": [
+      {
+        "raw": [
+          "Given a paperback book"
+        ],
+        "leading_comments_and_space": [],
+        "type": "Given",
+        "text": "a paperback book",
+        "multiline_arg": null,
+        "trailing_whitespace": []
+      },
+      {
+        "raw": [
+          "When I look at the back cover"
+        ],
+        "leading_comments_and_space": [],
+        "type": "When",
+        "text": "I look at the back cover",
+        "multiline_arg": null,
+        "trailing_whitespace": []
+      },
+      {
+        "raw": [
+          "Then I see the blurb"
+        ],
+        "leading_comments_and_space": [],
+        "type": "Then",
+        "text": "I see the blurb",
+        "multiline_arg": null,
+        "trailing_whitespace": []
+      }
+    ]
+  },
+  "remaining": [],
+  "raw_input": [
+    "# Helpful comment",
+    "",
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb"
+  ]
+}

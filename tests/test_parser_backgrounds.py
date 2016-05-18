@@ -1,3 +1,4 @@
+from copy import deepcopy
 import unittest
 from tests import common
 
@@ -13,12 +14,6 @@ class TestBackgroundsParser(unittest.TestCase):
         # We're doing a lot of long tests- don't limit the diff output length
         self.maxDiff = None
 
-    def tearDown(self):
-        """
-            Revert changes made during testing.
-        """
-        pass
-
     def test_getting_background_no_input_modification(self):
         """
             Test that getting scenario doesn't change the input var.
@@ -26,30 +21,17 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        # ] """
-        input_var = [
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-        ]
-        parser.section.get_background(input_var)
+        # When I call get_background with input from background/basic_input
+        input_data = common.get_parser_input('background/basic_input')
+
+        expected_data = deepcopy(input_data)
+
+        parser.section.get_background(input_data)
 
         # Then my input variable is not modified
         self.assertEqual(
-            input_var,
-            [
-                'Background:',
-                'Given a paperback book',
-                'When I look at the back cover',
-                'Then I see the blurb',
-            ],
+            input_data,
+            expected_data,
         )
 
     def test_basic_background(self):
@@ -59,60 +41,15 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        # ] """
-        input_data = [
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-        ]
+        # When I call get_background with input from background/basic_input
+        input_data = common.get_parser_input('background/basic_input')
+
         result = parser.section.get_background(input_data)
 
-        # Then I see a background with steps: [
-        # { 'type': 'Given', 'text': 'a paperback book' },
-        # { 'type': 'When', 'text': 'I look at the back cover' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # and the original input returned
+        # Then I see the results from background/basic_expected
         self.assertEqual(
             result,
-            {
-                'background': {
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a paperback book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the back cover',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('background/basic_expected'),
         )
 
     def test_background_without_steps(self):
@@ -122,31 +59,15 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Background:',
-        # ] """
-        input_data = [
-            'Background:',
-        ]
+        # When I call get_background with input from background/no_steps_input
+        input_data = common.get_parser_input('background/no_steps_input')
+
         result = parser.section.get_background(input_data)
 
-        # Then I see a background with steps: [
-        # { 'type': 'Given', 'text': 'a paperback book' },
-        # { 'type': 'When', 'text': 'I look at the back cover' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
+        # Then I see the results from background/no_steps_expected
         self.assertEqual(
             result,
-            {
-                'background': {
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'steps': [],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('background/no_steps_expected'),
         )
 
     def test_background_with_description(self):
@@ -156,59 +77,18 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Background: Check',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        # ] """
-        input_data = [
-            'Background: Check',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-        ]
+        # When I call get_background with input from
+        # background/with_description_input
+        input_data = common.get_parser_input(
+            'background/with_description_input',
+        )
+
         result = parser.section.get_background(input_data)
 
-        # Then I see a background described as ' Check' with steps: [
-        # { 'type': 'Given', 'text': 'a paperback book' },
-        # { 'type': 'When', 'text': 'I look at the back cover' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
+        # Then I see the results from background/with_description_expected
         self.assertEqual(
             result,
-            {
-                'background': {
-                    'description': ' Check',
-                    'leading_comments_and_space': [],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a paperback book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the back cover',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('background/with_description_expected'),
         )
 
     def test_background_with_comment(self):
@@ -218,64 +98,16 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    '# No comment',
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        # ] """
-        input_data = [
-            '# No comment',
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-        ]
+        # When I call get_background with input from
+        # background/with_comment_input
+        input_data = common.get_parser_input('background/with_comment_input')
+
         result = parser.section.get_background(input_data)
 
-        # Then I see a background with steps: [
-        # { 'type': 'Given', 'text': 'a paperback book' },
-        # { 'type': 'When', 'text': 'I look at the back cover' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # and leading comments and space of ['# No comment']
+        # Then I see the results from background/with_comment_expected
         self.assertEqual(
             result,
-            {
-                'background': {
-                    'description': '',
-                    'leading_comments_and_space': [
-                        '# No comment',
-                    ],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a paperback book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the back cover',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('background/with_comment_expected'),
         )
 
     def test_background_with_trailing_space(self):
@@ -285,64 +117,20 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        #    ' ',
-        # ] """
-        input_data = [
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-            ' ',
-        ]
+        # When I call get_background with input from
+        # background/with_trailing_space_input
+        input_data = common.get_parser_input(
+            'background/with_trailing_space_input',
+        )
+
         result = parser.section.get_background(input_data)
 
-        # Then I see a background with steps: [
-        # { 'type': 'Given', 'text': 'a paperback book' },
-        # { 'type': 'When', 'text': 'I look at the back cover' },
-        # { 'type': 'Then', 'text': 'I see the blurb',
-        #   'trailing_whitespace': [' '] },
-        # ]
+        # Then I see the results from background/with_trailing_space_expected
         self.assertEqual(
             result,
-            {
-                'background': {
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a paperback book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the back cover',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [
-                                ' ',
-                            ],
-                        },
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'background/with_trailing_space_expected',
+            ),
         )
 
     def test_no_background_with_leading_noise(self):
@@ -352,39 +140,20 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Noisy line',
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        # ] """
-        input_data = [
-            'Noisy line',
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-        ]
+        # When I call get_background with input from
+        # background/with_leading_noise_input
+        input_data = common.get_parser_input(
+            'background/with_leading_noise_input',
+        )
+
         result = parser.section.get_background(input_data)
 
-        # Then I see no background with remaining ['Noisy line',
-        # 'Background:', 'Given a paperback book',
-        # 'When I look at the back cover', 'Then I see the blurb']
+        # Then I see the results from background/with_leading_noise_input
         self.assertEqual(
             result,
-            {
-                'background': None,
-                'remaining': [
-                    'Noisy line',
-                    'Background:',
-                    'Given a paperback book',
-                    'When I look at the back cover',
-                    'Then I see the blurb',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'background/with_leading_noise_expected',
+            ),
         )
 
     def test_background_with_trailing_background(self):
@@ -394,74 +163,21 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on a list containing
-        # """[
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        #    'Background:',
-        #    'Given a paperback book',
-        #    'When I look at the back cover',
-        #    'Then I see the blurb',
-        # ] """
-        input_data = [
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-            'Background:',
-            'Given a paperback book',
-            'When I look at the back cover',
-            'Then I see the blurb',
-        ]
+        # When I call get_background with input from
+        # background/with_trailing_background_input
+        input_data = common.get_parser_input(
+            'background/with_trailing_background_input',
+        )
+
         result = parser.section.get_background(input_data)
 
-        # Then I see a background with steps: [
-        # { 'type': 'Given', 'text': 'a paperback book' },
-        # { 'type': 'When', 'text': 'I look at the back cover' },
-        # { 'type': 'Then', 'text': 'I see the blurb' },
-        # ]
-        # and remaining: ['Background:', 'Given a paperback book',
-        # 'When I look at the back cover', 'Then I see the blurb']
+        # Then I see the results from
+        # background/with_trailing_background_expected
         self.assertEqual(
             result,
-            {
-                'background': {
-                    'description': '',
-                    'leading_comments_and_space': [],
-                    'steps': [
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Given',
-                            'text': 'a paperback book',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'When',
-                            'text': 'I look at the back cover',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                        {
-                            'leading_comments_and_space': [],
-                            'type': 'Then',
-                            'text': 'I see the blurb',
-                            'multiline_arg': None,
-                            'trailing_whitespace': [],
-                        },
-                    ],
-                },
-                'remaining': [
-                    'Background:',
-                    'Given a paperback book',
-                    'When I look at the back cover',
-                    'Then I see the blurb',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'background/with_trailing_background_expected',
+            ),
         )
 
     def test_no_background_with_no_input(self):
@@ -471,15 +187,13 @@ class TestBackgroundsParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_background on an empty list
-        result = parser.section.get_background([])
+        # When I call get_background with input from background/no_input
+        input_data = common.get_parser_input('background/no_input')
+
+        result = parser.section.get_background(input_data)
 
         # Then I see no background
         self.assertEqual(
             result,
-            {
-                'background': None,
-                'remaining': [],
-                'raw_input': [],
-            },
+            common.get_parser_output('background/no_input_expected'),
         )

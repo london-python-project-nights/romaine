@@ -1,0 +1,52 @@
+{
+  "examples": [
+    {
+      "raw": [
+        "Examples: Our vital test",
+        "|first|second|",
+        "|1|2|"
+      ],
+      "leading_comments_and_space": [],
+      "trailing_whitespace": [
+        ""
+      ],
+      "description": " Our vital test",
+      "columns": {
+        "first": ["1"],
+        "second": ["2"]
+      },
+      "table": [
+        ["first", "second"],
+        ["1", "2"]
+      ]
+    },
+    {
+      "raw": [
+        " Examples: This test is unimportant",
+        "|first|second|",
+        "|3|4|"
+      ],
+      "leading_comments_and_space": [],
+      "trailing_whitespace": [],
+      "description": " This test is unimportant",
+      "columns": {
+        "first": ["3"],
+        "second": ["4"]
+      },
+      "table": [
+        ["first", "second"],
+        ["3", "4"]
+      ]
+    }
+  ],
+  "remaining": [],
+  "raw_input": [
+    "Examples: Our vital test",
+    "|first|second|",
+    "|1|2|",
+    "",
+    " Examples: This test is unimportant",
+    "|first|second|",
+    "|3|4|"
+  ]
+}

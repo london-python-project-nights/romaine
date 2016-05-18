@@ -1,0 +1,3 @@
+    # Check for empty steps
+    
+    When I call get_step on an empty list

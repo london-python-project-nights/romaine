@@ -1,0 +1,21 @@
+{
+  "step": {
+    "raw": [
+      "When I call get_step with a table like this",
+      "|this table|"
+    ],
+    "leading_comments_and_space": [],
+    "type": "When",
+    "text": "I call get_step with a table like this",
+    "multiline_arg": {
+      "type": "table",
+      "data": [["this table"]]
+    },
+    "trailing_whitespace": []
+  },
+  "remaining": [],
+  "raw_input": [
+    "When I call get_step with a table like this",
+    "|this table|"
+  ]
+}

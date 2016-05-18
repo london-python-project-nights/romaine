@@ -1,3 +1,4 @@
+from copy import deepcopy
 import unittest
 from tests import common
 
@@ -17,12 +18,6 @@ class TestExamplesParser(unittest.TestCase):
         # We're doing a lot of long tests- don't limit the diff output length
         self.maxDiff = None
 
-    def tearDown(self):
-        """
-            Revert changes made during testing.
-        """
-        pass
-
     def test_getting_example_no_input_modification(self):
         """
             Test that getting example doesn't change the input var.
@@ -30,27 +25,17 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing
-        # """[
-        #    'Examples:',
-        #    '|one|two|',
-        #    '|1|2|',
-        # ] """
-        input_var = [
-            'Examples:',
-            '|one|two|',
-            '|1|2|',
-        ]
-        parser.section.get_example(input_var)
+        # When I call get_example with input from examples/basic_input
+        input_data = common.get_parser_input('examples/basic_input')
+
+        expected_data = deepcopy(input_data)
+
+        parser.section.get_example(input_data)
 
         # Then my input variable is not modified
         self.assertEqual(
-            input_var,
-            [
-                'Examples:',
-                '|one|two|',
-                '|1|2|',
-            ],
+            input_data,
+            expected_data,
         )
 
     def test_basic_examples_without_description(self):
@@ -60,41 +45,15 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples:',
-        #    '|one|two|',
-        #    '|1|2|',
-        # ] """
-        input_data = [
-            'Examples:',
-            '|one|two|',
-            '|1|2|',
-        ]
+        # When I call get_example with input from examples/basic_input
+        input_data = common.get_parser_input('examples/basic_input')
+
         result = parser.section.get_example(input_data)
 
-        # Then I see an example containing:
-        # one: ["1"]
-        # two: ["2"]
+        # Then I see the results from examples/basic_expected
         self.assertEqual(
             result,
-            {
-                'example': {
-                    'leading_comments_and_space': [],
-                    'trailing_whitespace': [],
-                    'description': '',
-                    'columns': {
-                        'one': ['1'],
-                        'two': ['2'],
-                    },
-                    'table': [
-                        ['one', 'two'],
-                        ['1', '2'],
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('examples/basic_expected'),
         )
 
     def test_basic_examples_with_description(self):
@@ -104,41 +63,15 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        # ] """
-        input_data = [
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-        ]
+        # When I call get_example with input from examples/description_input
+        input_data = common.get_parser_input('examples/description_input')
+
         result = parser.section.get_example(input_data)
 
-        # Then I see an example described as 'Our vital test' containing:
-        # first: ["1"]
-        # second: ["2"]
+        # Then I see the results from examples/description_expected
         self.assertEqual(
             result,
-            {
-                'example': {
-                    'leading_comments_and_space': [],
-                    'trailing_whitespace': [],
-                    'description': ' Our vital test',
-                    'columns': {
-                        'first': ['1'],
-                        'second': ['2'],
-                    },
-                    'table': [
-                        ['first', 'second'],
-                        ['1', '2'],
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('examples/description_expected'),
         )
 
     def test_malformed_examples_table_causes_exception(self):
@@ -149,113 +82,59 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples:',
-        #    '|first|second|',
-        #    '|1|',
-        # ] """
+        # When I call get_example with input from
+        # examples/malformed_examples_table_input
+        input_data = common.get_parser_input(
+            'examples/malformed_examples_table_input',
+        )
         # Then I see a MalformedTableError
         with self.assertRaises(MalformedTableError):
-            parser.section.get_example([
-                'Examples:',
-                '|first|second|',
-                '|1|',
-            ])
+            parser.section.get_example(input_data)
 
-    def test_examples_with_incomplete_table_raises_exception(self):
+    def test_examples_with_incomplete_table(self):
         """
-            Confirm we see an exception with just table headings.
+            Confirm we can retrieve example with just table headings.
         """
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples:',
-        #    '|one|two|',
-        # ] """
-        input_data = [
-            'Examples:',
-            '|one|two|',
-        ]
+        # When I call get_example with input from
+        # examples/incomplete_table_input
+        input_data = common.get_parser_input(
+            'examples/incomplete_table_input',
+        )
+
         result = parser.section.get_example(input_data)
 
-        # Then I see an example containing:
-        # one: []
-        # two: []
+        # Then I see the results from
+        # examples/incomplete_table_expected
         self.assertEqual(
             result,
-            {
-                'example': {
-                    'leading_comments_and_space': [],
-                    'trailing_whitespace': [],
-                    'description': '',
-                    'columns': {
-                        'one': [],
-                        'two': [],
-                    },
-                    'table': [
-                        ['one', 'two'],
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('examples/incomplete_table_expected'),
         )
 
     def test_examples_with_leading_comment_and_whitespace_can_be_parsed(self):
-
         """
             Check that examples with leading comment and whitespace are valid.
         """
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    '#Some comment about the test',
-        #    '     ',
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        # ] """
-        input_data = [
-            '#Some comment about the test',
-            '     ',
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-        ]
+        # When I call get_example with input from
+        # examples/comment_and_whitespace_input
+        input_data = common.get_parser_input(
+            'examples/comment_and_whitespace_input',
+        )
+
         result = parser.section.get_example(input_data)
 
-        # Then I see an example described as 'Our vital test' containing:
-        # first: ["1"]
-        # second: ["2"]
-        # with leading comments and space of: ['#Some comment about the test',
-        # '     ']
+        # Then I see the results from
+        # examples/comment_and_whitespace_expected
         self.assertEqual(
             result,
-            {
-                'example': {
-                    'leading_comments_and_space': [
-                        '#Some comment about the test',
-                        '     ',
-                    ],
-                    'trailing_whitespace': [],
-                    'description': ' Our vital test',
-                    'columns': {
-                        'first': ['1'],
-                        'second': ['2'],
-                    },
-                    'table': [
-                        ['first', 'second'],
-                        ['1', '2'],
-                    ],
-                },
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'examples/comment_and_whitespace_expected',
+            ),
         )
 
     def test_example_with_trailing_data_and_whitespace(self):
@@ -265,50 +144,21 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        #    '',
-        #    'lemons',
-        # ] """
-        input_data = [
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-            '',
-            'lemons',
-        ]
+        # When I call get_example with input from
+        # examples/trailing_data_and_whitespace_input
+        input_data = common.get_parser_input(
+            'examples/trailing_data_and_whitespace_input',
+        )
+
         result = parser.section.get_example(input_data)
 
-        # Then I see an example described as 'Our vital test' containing:
-        # first: ["1"]
-        # second: ["2"]
-        # with trailing space of: ['']
-        # and I have the following lines remaining:
-        # ['lemons' ]
+        # Then I see the results from
+        # examples/trailing_data_and_whitespace_expected
         self.assertEqual(
             result,
-            {
-                'example': {
-                    'leading_comments_and_space': [],
-                    'trailing_whitespace': [
-                        ''
-                    ],
-                    'description': ' Our vital test',
-                    'columns': {
-                        'first': ['1'],
-                        'second': ['2'],
-                    },
-                    'table': [
-                        ['first', 'second'],
-                        ['1', '2'],
-                    ],
-                },
-                'remaining': ['lemons'],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'examples/trailing_data_and_whitespace_expected',
+            ),
         )
 
     def test_multiple_examples_sections(self):
@@ -318,59 +168,21 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        #    '',
-        #    ' Examples: This test is unimportant',
-        #    '|first|second|',
-        #    '|3|4|',
-        # ] """
-        input_data = [
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-            '',
-            ' Examples: This test is unimportant',
-            '|first|second|',
-            '|3|4|',
-        ]
+        # When I call get_example with input from
+        # examples/one_from_multiple_examples_input
+        input_data = common.get_parser_input(
+            'examples/one_from_multiple_examples_input',
+        )
+
         result = parser.section.get_example(input_data)
 
-        # Then I see an example described as 'Our vital test' containing:
-        # first: ["1"]
-        # second: ["2"]
-        # with trailing space of: ['']
-        # and I have the following lines remaining:
-        # [ ' Examples: This test is unimportant', '|first|second|',
-        #   '|3|4|' ]
+        # Then I see the results from
+        # examples/one_from_multiple_examples_expected
         self.assertEqual(
             result,
-            {
-                'example': {
-                    'leading_comments_and_space': [],
-                    'trailing_whitespace': [
-                        ''
-                    ],
-                    'description': ' Our vital test',
-                    'columns': {
-                        'first': ['1'],
-                        'second': ['2'],
-                    },
-                    'table': [
-                        ['first', 'second'],
-                        ['1', '2']
-                    ],
-                },
-                'remaining': [
-                    ' Examples: This test is unimportant',
-                    '|first|second|',
-                    '|3|4|',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'examples/one_from_multiple_examples_expected',
+            ),
         )
 
     def test_no_examples_sections_with_trailing_data(self):
@@ -380,42 +192,41 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # [ 'This is not an examples section' ]
-        input_data = [
-            'This is not an examples section',
-        ]
-        result = parser.section.get_example(input_data)
-
-        # Then I see no examples section and remaining:
-        # [ 'This is not an examples section' ]
-        self.assertEqual(
-            result,
-            {
-                'example': None,
-                'remaining': ['This is not an examples section'],
-                'raw_input': input_data,
-            },
+        # When I call get_example with input from
+        # examples/no_examples_input
+        input_data = common.get_parser_input(
+            'examples/no_examples_input',
         )
 
-    def test_no_examples_sections(self):
+        result = parser.section.get_example(input_data)
+
+        # Then I see the results from
+        # examples/no_examples_expected
+        self.assertEqual(
+            result,
+            common.get_parser_output('examples/no_examples_expected'),
+        )
+
+    def test_no_examples_from_nothing(self):
         """
             Check that we don't crash trying to get examples from nothing.
         """
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on an empty list
-        result = parser.section.get_example([])
+        # When I call get_example with input from
+        # examples/empty_input
+        input_data = common.get_parser_input(
+            'examples/empty_input',
+        )
 
-        # Then I see no examples section and nothing remaining.
+        result = parser.section.get_example(input_data)
+
+        # Then I see the results from
+        # examples/empty_expected
         self.assertEqual(
             result,
-            {
-                'example': None,
-                'remaining': [],
-                'raw_input': [],
-            },
+            common.get_parser_output('examples/empty_expected'),
         )
 
     def test_examples_divorced_from_table(self):
@@ -425,35 +236,19 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_example on a list containing:
-        # """[
-        #    'Examples:',
-        #    '# Misplaced comment',
-        #    '|one|two|',
-        #    '|1|2|',
-        # ] """
-        input_data = [
-            'Examples:',
-            '# Misplaced comment',
-            '|one|two|',
-            '|1|2|',
-        ]
+        # When I call get_example with input from
+        # examples/missing_table_input
+        input_data = common.get_parser_input(
+            'examples/missing_table_input',
+        )
+
         result = parser.section.get_example(input_data)
 
-        # Then I see no examples section and the remaining: ['Examples:',
-        # '# Misplaced comment', '|one|two|', '|1|2|']
+        # Then I see the results from
+        # examples/missing_table_expected
         self.assertEqual(
             result,
-            {
-                'example': None,
-                'remaining': [
-                    'Examples:',
-                    '# Misplaced comment',
-                    '|one|two|',
-                    '|1|2|',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('examples/missing_table_expected'),
         )
 
     def test_basic_single_examples_without_description(self):
@@ -463,43 +258,19 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_examples on a list containing:
-        # """[
-        #    'Examples:',
-        #    '|one|two|',
-        #    '|1|2|',
-        # ] """
-        input_data = [
-            'Examples:',
-            '|one|two|',
-            '|1|2|',
-        ]
+        # When I call get_example with input from
+        # examples/single_example_input
+        input_data = common.get_parser_input(
+            'examples/single_example_input',
+        )
+
         result = parser.section.get_examples(input_data)
 
-        # Then I see one example containing:
-        # one: ["1"]
-        # two: ["2"]
+        # Then I see the results from
+        # examples/single_example_expected
         self.assertEqual(
             result,
-            {
-                'examples': [
-                    {
-                        'leading_comments_and_space': [],
-                        'trailing_whitespace': [],
-                        'description': '',
-                        'columns': {
-                            'one': ['1'],
-                            'two': ['2'],
-                        },
-                        'table': [
-                            ['one', 'two'],
-                            ['1', '2'],
-                        ],
-                    },
-                ],
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('examples/single_example_expected'),
         )
 
     def test_get_multiple_examples_sections(self):
@@ -509,71 +280,19 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_examples on a list containing:
-        # """[
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        #    '',
-        #    ' Examples: This test is unimportant',
-        #    '|first|second|',
-        #    '|3|4|',
-        # ] """
-        input_data = [
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-            '',
-            ' Examples: This test is unimportant',
-            '|first|second|',
-            '|3|4|',
-        ]
+        # When I call get_example with input from
+        # examples/multiple_examples_input
+        input_data = common.get_parser_input(
+            'examples/multiple_examples_input',
+        )
+
         result = parser.section.get_examples(input_data)
 
-        # Then I see one example described as ' Our vital test' containing:
-        # first: ["1"]
-        # second: ["2"]
-        # with trailing space of: ['']
-        # and a second example described as ' This test is unimportant'
-        # containing:
-        # first: ["3"]
-        # second: ["4"]
+        # Then I see the results from
+        # examples/multiple_examples_expected
         self.assertEqual(
             result,
-            {
-                'examples': [
-                    {
-                        'leading_comments_and_space': [],
-                        'trailing_whitespace': [
-                            ''
-                        ],
-                        'description': ' Our vital test',
-                        'columns': {
-                            'first': ['1'],
-                            'second': ['2'],
-                        },
-                        'table': [
-                            ['first', 'second'],
-                            ['1', '2'],
-                        ],
-                    },
-                    {
-                        'leading_comments_and_space': [],
-                        'trailing_whitespace': [],
-                        'description': ' This test is unimportant',
-                        'columns': {
-                            'first': ['3'],
-                            'second': ['4'],
-                        },
-                        'table': [
-                            ['first', 'second'],
-                            ['3', '4'],
-                        ],
-                    },
-                ],
-                'remaining': [],
-                'raw_input': input_data,
-            },
+            common.get_parser_output('examples/multiple_examples_expected'),
         )
 
     def test_get_one_example_with_example_following_other_data(self):
@@ -583,64 +302,21 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_examples on a list containing:
-        # """[
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        #    '',
-        #    'Scenario Outline: Missing steps',
-        #    ' Examples: This test is unimportant',
-        #    '|first|second|',
-        #    '|3|4|',
-        # ] """
-        input_data = [
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-            '',
-            'Scenario Outline: Missing steps',
-            ' Examples: This test is unimportant',
-            '|first|second|',
-            '|3|4|',
-        ]
+        # When I call get_example with input from
+        # examples/noise_between_examples_input
+        input_data = common.get_parser_input(
+            'examples/noise_between_examples_input',
+        )
+
         result = parser.section.get_examples(input_data)
 
-        # Then I see one example described as 'Our vital test' containing:
-        # first: ["1"]
-        # second: ["2"]
-        # with trailing space of: ['']
-        # and I have the following lines remaining:
-        # [ 'Scenario Outline: Missing steps', ' Examples: This test is
-        # unimportant', '|first|second|', '|3|4|' ]
+        # Then I see the results from
+        # examples/noise_between_examples_expected
         self.assertEqual(
             result,
-            {
-                'examples': [
-                    {
-                        'leading_comments_and_space': [],
-                        'trailing_whitespace': [
-                            ''
-                        ],
-                        'description': ' Our vital test',
-                        'columns': {
-                            'first': ['1'],
-                            'second': ['2'],
-                        },
-                        'table': [
-                            ['first', 'second'],
-                            ['1', '2']
-                        ],
-                    },
-                ],
-                'remaining': [
-                    'Scenario Outline: Missing steps',
-                    ' Examples: This test is unimportant',
-                    '|first|second|',
-                    '|3|4|',
-                ],
-                'raw_input': input_data,
-            },
+            common.get_parser_output(
+                'examples/noise_between_examples_expected',
+            ),
         )
 
     def test_do_not_get_multiple_examples_from_nothing(self):
@@ -650,17 +326,19 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_examples with []
-        result = parser.section.get_examples([])
+        # When I call get_examples with input from
+        # examples/empty_input
+        input_data = common.get_parser_input(
+            'examples/empty_input',
+        )
 
-        # Then I see no examples
+        result = parser.section.get_examples(input_data)
+
+        # Then I see the results from
+        # examples/empty_examples_expected
         self.assertEqual(
             result,
-            {
-                'examples': [],
-                'remaining': [],
-                'raw_input': [],
-            },
+            common.get_parser_output('examples/empty_examples_expected'),
         )
 
     def test_get_examples_no_input_modification(self):
@@ -670,45 +348,15 @@ class TestExamplesParser(unittest.TestCase):
         # Given I have Romaine core's parser
         parser = common.get_romaine_parser()
 
-        # When I call get_examples on a list containing:
-        # """[
-        #    'Examples: Our vital test',
-        #    '|first|second|',
-        #    '|1|2|',
-        #    '',
-        #    ' Examples: This test is unimportant',
-        #    '|first|second|',
-        #    '|3|4|',
-        # ] """
-        input_var = [
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-            '',
-            ' Examples: This test is unimportant',
-            '|first|second|',
-            '|3|4|',
-        ]
-        parser.section.get_examples([
-            'Examples: Our vital test',
-            '|first|second|',
-            '|1|2|',
-            '',
-            ' Examples: This test is unimportant',
-            '|first|second|',
-            '|3|4|',
-        ])
+        # When I call get_examples with input from examples/basic_input
+        input_data = common.get_parser_input('examples/basic_input')
+
+        expected_data = deepcopy(input_data)
+
+        parser.section.get_examples(input_data)
 
         # Then my input variable is not modified
         self.assertEqual(
-            input_var,
-            [
-                'Examples: Our vital test',
-                '|first|second|',
-                '|1|2|',
-                '',
-                ' Examples: This test is unimportant',
-                '|first|second|',
-                '|3|4|',
-            ],
+            input_data,
+            expected_data,
         )

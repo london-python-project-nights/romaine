@@ -1,0 +1,11 @@
+{
+  "type": "table",
+  "data": [["my_table_here"]],
+  "remaining": ["\"\"\"", "not this", "\"\"\""],
+  "raw_input": [
+    "|my_table_here|",
+    "\"\"\"",
+    "not this",
+    "\"\"\""
+  ]
+}

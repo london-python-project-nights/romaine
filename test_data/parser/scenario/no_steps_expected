@@ -1,0 +1,16 @@
+{
+  "element": {
+    "raw": [
+      "Scenario:"
+    ],
+    "type": "scenario",
+    "tags": [],
+    "description": "",
+    "leading_comments_and_space": [],
+    "steps": []
+  },
+  "remaining": [],
+  "raw_input": [
+    "Scenario:"
+  ]
+}

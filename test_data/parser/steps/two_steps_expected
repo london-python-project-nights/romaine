@@ -1,0 +1,47 @@
+{
+  "steps": [
+    {
+      "raw": [
+       "When I call get_step with a string like this",
+       "\"\"\"",
+       "    multiline string",
+       "\"\"\""
+      ],
+      "leading_comments_and_space": [],
+      "type": "When",
+      "text": "I call get_step with a string like this",
+      "multiline_arg": {
+        "type": "multiline_string",
+        "data": ["", "    multiline string", ""]
+      },
+      "trailing_whitespace": [""]
+    },
+    {
+      "raw": [
+        "Then I am happy to see this step"
+      ],
+      "leading_comments_and_space": [
+        "# Test second step",
+        ""
+      ],
+      "type": "Then",
+      "text": "I am happy to see this step",
+      "multiline_arg": null,
+      "trailing_whitespace": []
+    }
+  ],
+  "remaining": [
+    "No more diagonal lines"
+  ],
+  "raw_input": [
+    "When I call get_step with a string like this",
+    "\"\"\"",
+    "    multiline string",
+    "\"\"\"",
+    "",
+    "# Test second step",
+    "",
+    "Then I am happy to see this step",
+    "No more diagonal lines"
+  ]
+}

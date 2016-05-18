@@ -1,0 +1,11 @@
+{
+  "step": null,
+  "remaining": [
+    "This is not a real step.",
+    "When I call get_step on an empty list"
+  ],
+  "raw_input": [
+    "This is not a real step.",
+    "When I call get_step on an empty list"
+  ]
+}

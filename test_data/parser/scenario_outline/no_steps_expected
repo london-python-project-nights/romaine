@@ -1,0 +1,43 @@
+{
+  "element": {
+    "raw": [
+      "Scenario Outline:"
+    ],
+    "type": "scenario outline",
+    "tags": [],
+    "description": "",
+    "leading_comments_and_space": [],
+    "examples": [
+      {
+        "raw": [
+          "Examples:",
+          "|book|location|",
+          "|paperback|back cover|"
+        ],
+        "leading_comments_and_space": [],
+        "description": "",
+        "columns": {
+          "book": [
+            "paperback"
+          ],
+          "location": [
+            "back cover"
+          ]
+        },
+        "trailing_whitespace": [],
+        "table": [
+          ["book", "location"],
+          ["paperback", "back cover"]
+        ]
+      }
+    ],
+    "steps": []
+  },
+  "remaining": [],
+  "raw_input": [
+    "Scenario Outline:",
+    "Examples:",
+    "|book|location|",
+    "|paperback|back cover|"
+  ]
+}

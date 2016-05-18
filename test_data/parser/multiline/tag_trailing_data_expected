@@ -1,0 +1,12 @@
+{
+  "tags": [
+    "my_tag"
+  ],
+  "remaining": [
+    "I like tests"
+  ],
+  "raw_input": [
+    "@my_tag",
+    "I like tests"
+  ]
+}

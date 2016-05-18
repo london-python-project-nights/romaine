@@ -1,0 +1,18 @@
+{
+  "type": null,
+  "data": null,
+  "remaining": [
+    "",
+    "\"\"\"",
+    "my pystring",
+    "\"\"\"",
+    "|not this|"
+  ],
+  "raw_input": [
+    "",
+    "\"\"\"",
+    "my pystring",
+    "\"\"\"",
+    "|not this|"
+  ]
+}

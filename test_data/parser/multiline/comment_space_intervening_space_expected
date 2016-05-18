@@ -1,0 +1,18 @@
+{
+  "comments_and_space": [
+    "# Happy comment",
+    "",
+    "# Sad comment",
+    ""
+  ],
+  "remaining": [
+    "Another test"
+  ],
+  "raw_input": [
+    "# Happy comment",
+    "",
+    "# Sad comment",
+    "",
+    "Another test"
+  ]
+}

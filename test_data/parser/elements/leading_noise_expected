@@ -1,0 +1,17 @@
+{
+  "elements": [],
+  "remaining": [
+    "Leading noise",
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb"
+  ],
+  "raw_input": [
+    "Leading noise",
+    "Scenario:",
+    "Given a paperback book",
+    "When I look at the back cover",
+    "Then I see the blurb"
+  ]
+}
