@@ -1,4 +1,6 @@
 import os
+import logging
+
 from romaine.logs import RomaineLogger
 from romaine.parser import Parser
 from romaine import runner
@@ -12,13 +14,14 @@ class Core(object):
     feature_file_paths = set()
     instance = None
 
-    def __init__(self):
+    def __init__(self, log_level=logging.WARNING):
         """
             Initialise Romaine core.
         """
         self.steps = {}
         self.Parser = Parser
         Core.instance = self
+        self.log_level = log_level
 
     def locate_features(self, path):
         """
@@ -52,7 +55,7 @@ class Core(object):
         return feature_candidates
 
     def run_features(self, *features):
-        with RomaineLogger() as logger:
+        with RomaineLogger(out_level=self.log_level) as logger:
             for feature in features:
                 runner.run_feature(feature, self.steps, logger)
         return logger.statistics

@@ -188,7 +188,7 @@ class AbstractRomaineLogger(object):
             "duration": None,
         }
 
-        step_text = "{type} {text}".format(**step)
+        step_text = "\n".join(step["raw"])
         try:
             with self._duration(step["stats"]):
                 yield
