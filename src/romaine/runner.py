@@ -4,83 +4,141 @@ import re
 VARIABLE = re.compile("<([^><\n]+)>")
 
 
-def run_feature(feature, steps, logger):
-    with logger.in_feature(feature):
-        for scenario in feature["elements"]:
-            handlers = {
-                "scenario": run_scenario,
-                "scenario outline": run_scenario_outline,
-            }
-            key = scenario["type"]
-
-            handlers[key](scenario, steps, logger)
-
-
-def run_scenario(scenario, steps, logger):
-    with logger.in_scenario(scenario):
-        step_type = None
-
-        for step in scenario["steps"]:
-            if step["type"] in {"Given", "When", "Then"}:
-                step_type = step["type"]
-
-            run_step(step, steps, logger, step_type)
-
-
-class Rows(object):
-    def __init__(self, rows):
+class ExampleTable(object):
+    def add_hashes(self):
+        rows = self.table["table"]
         rows = [list(map(str.strip, row)) for row in rows]
         self.header = rows[0]
-        self.rows = rows[1:]
+        self.rows = [row for row in rows[1:] if row]
+        self.hashes = self.table["hashes"] = []
 
-    def __iter__(self):
         for row in self.rows:
-            if not row:
-                continue
-
             if len(row) != len(self.header):
                 raise IndexError(
                     "Row {} must be the same length as heading {}"
                     .format(row, self.header)
                 )
-            yield dict(zip(self.header, row))
+            self.hashes.append(dict(zip(self.header, row)))
 
-    @property
-    def as_list(self):
-        return list(self)
+    def __init__(self, table):
+        self.table = table
+        self.add_hashes()
 
+        self.header = None
+        self.rows = None
+        self.hashes = None
 
-def run_scenario_outline(scenario, steps, logger):
-    with logger.in_scenario_outline(scenario):
-        for table in scenario["examples"]:
-            table["hashes"] = Rows(table["table"]).as_list
-
-            with logger.in_scenario_outline_example(table):
-                for i, row in enumerate(table["hashes"]):
-
-                    with logger.in_scenario_outline_example_row(table, i):
-                        run_scenario_outline_row(scenario, steps, logger, row)
+    def filled(self, steps):
+        for i, data in enumerate(self.hashes, start=1):
+            string = self.table["table"][i]
+            row = ExampleRow(string, data)
+            yield string, row.apply_steps(steps)
 
 
-def run_scenario_outline_row(scenario, steps, logger, row):
-    step_type = None
+class ExampleRow(object):
+    def __init__(self, string, data):
+        self.string = string
+        self.data = data
 
-    for step in scenario["steps"]:
-        if step["type"] in {"Given", "When", "Then"}:
-            step_type = step["type"]
+    def apply_steps(self, steps):
+        return list(map(self.apply_step, steps))
 
-        variables = VARIABLE.findall(step["text"])
+    def apply_step(self, step):
+        return Variable.apply_all(step, self.data)
 
+
+class Variable(object):
+    pattern = re.compile("<([^><\n]+)>")
+
+    @classmethod
+    def apply_all(cls, step, example_row):
         step = step.copy()
-        for variable in variables:
-            replaced = lambda x: x.replace(
-                "<{}>".format(variable),
-                row[variable],
-            )
-            step["text"] = replaced(step["text"])
-            step["raw"] = [replaced(part) for part in step["raw"]]
+        for var in cls.pattern.findall(step["text"]):
+            example = example_row[var]
+            cls(example, var).apply_on(step)
+        return step
 
-        run_step(step, steps, logger, step_type)
+    def __init__(self, example, variable):
+        self.example = example
+        self.variable = variable
+        self.formatted = "<{}>".format(variable)
+
+    def _replaced(self, string):
+        return string.replace(self.formatted, self.example)
+
+    def apply_on(self, step):
+        step["text"] = self._replaced(step["text"])
+        step["raw"] = list(map(self._replaced, step["raw"]))
+
+
+class Runner(object):
+    def __init__(self, logger, step_definitions):
+        self.logger = logger
+        self.step_definitions = step_definitions
+
+    def feature(self, feature):
+        with self.logger.in_feature(feature):
+            for scenario in feature["elements"]:
+                handlers = {
+                    "scenario": self.scenario,
+                    "scenario outline": self.scenario_outline,
+                }
+                key = scenario["type"]
+                handlers[key](scenario)
+
+    def scenario(self, scenario):
+        with self.logger.in_scenario(scenario):
+            step_type = None
+
+            for step in scenario["steps"]:
+                if step["type"] in {"Given", "When", "Then"}:
+                    step_type = step["type"]
+
+                self.step(step, step_type)
+
+    def scenario_outline(self, scenario):
+        with self.logger.in_scenario_outline(scenario):
+            for table in map(ExampleTable, scenario["examples"]):
+                table.add_hashes()
+                with self.logger.in_scenario_outline_example(table.table):
+                    outline_steps = scenario["steps"]
+                    for string, filled_steps in table.filled(outline_steps):
+                        self.scenario_outline_row(string, filled_steps)
+
+    def scenario_outline_row(self, string, filled_steps):
+        with self.logger.in_scenario_outline_example_row(string, filled_steps):
+            step_type = None
+
+            for step in filled_steps:
+                if step["type"] in {"Given", "When", "Then"}:
+                    step_type = step["type"]
+
+                self.step(step, step_type)
+
+    def find_definition(self, step, step_type):
+        steps = self.step_definitions
+        step_key = step["text"]
+        if step_key in steps:
+            return steps[step_key], (), {}
+
+        definitions = sorted(steps.values(), key=lambda d: len(d.name))
+
+        for definition in definitions:
+            if not is_valid(definition.prefix, step, step_type):
+                continue
+            match = definition.regex.match(step_key)
+            if match:
+                args, kwargs = get_match_groups(definition.regex, match)
+
+                return definition, args, kwargs
+
+        raise NotImplementedError("No step definition for {}"
+                                  .format(step_key))
+
+    def step(self, step, step_type):
+        with self.logger.in_step(step):
+            definition, args, kwargs = self.find_definition(step, step_type)
+            definition.func(*args, **kwargs)
 
 
 def is_valid(step_type, step, last_major):
@@ -126,6 +184,5 @@ def find_definition(step, steps, step_type):
 
 
 def run_step(step, steps, logger, step_type):
-    with logger.in_step(step):
-        definition, args, kwargs = find_definition(step, steps, step_type)
-        definition.func(*args, **kwargs)
+    definition, args, kwargs = find_definition(step, steps, step_type)
+    definition.func(*args, **kwargs)

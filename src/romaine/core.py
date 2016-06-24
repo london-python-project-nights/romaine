@@ -56,6 +56,7 @@ class Core(object):
 
     def run_features(self, *features):
         with RomaineLogger(out_level=self.log_level) as logger:
+            r = runner.Runner(logger, self.steps)
             for feature in features:
-                runner.run_feature(feature, self.steps, logger)
+                r.feature(feature)
         return logger.statistics

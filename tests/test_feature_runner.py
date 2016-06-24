@@ -53,6 +53,7 @@ def make_step(text="step_name", **custom):
         'text': text,
         'multiline_arg': None,
         'trailing_whitespace': [],
+        'raw': ["  Given {}".format(text)],
     }
     step.update(custom)
     return step

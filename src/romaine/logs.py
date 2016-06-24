@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 
 from romaine import exc
+from romaine import runner
 
 
 def test_step_to_stub(step):
@@ -25,15 +26,7 @@ def test_step_to_stub(step):
 
 # TODO - This should be in the runner, but that is not built yet
 def fill_step_with_example_row(step, row):
-    step_text = step['text']
-
-    for key, value in row.items():
-        step_text = step_text.replace("<{key}>".format(key=key), value)
-
-    step = step.copy()
-    step['text'] = step_text
-
-    return step
+    return runner.Variable.apply_all(step, row)
 
 
 class AbstractRomaineLogger(object):
@@ -320,23 +313,17 @@ class AbstractRomaineLogger(object):
             self._scenario_outline_example = None
 
     @contextmanager
-    def in_scenario_outline_example_row(self, example, index):
-        row_string = example["table"][index + 1]
-        row_dict = example["hashes"][index]
-        run = [
-            fill_step_with_example_row(step, row_dict)
-            for step in self._scenario_outline["steps"]
-        ]
-        self._scenario_outline_example["runs"].append(run)
-        self.alert(self.INFO, "    |{}|".format("|".join(row_string)))
+    def in_scenario_outline_example_row(self, string, steps):
+        self._scenario_outline_example["runs"].append(steps)
+        self.alert(self.INFO, "    |{}|".format("|".join(string)))
         try:
-            yield run
+            yield steps
         except exc.SkipTest:
             self.alert(self.WARNING,
-                       "    |{}| (skipped)".format("|".join(row_string)))
+                       "    |{}| (skipped)".format("|".join(string)))
         except AssertionError:
             self.alert(self.ERROR,
-                       "    |{}|".format("|".join(row_string)))
+                       "    |{}|".format("|".join(string)))
 
     @abstractmethod
     def alert(self, level, body='', exc_info=False):
@@ -423,6 +410,9 @@ class RomaineLogger(AbstractRomaineLogger):
 
         handler = logging.StreamHandler()
         handler.setLevel(out_level)
+        formatter = logging.Formatter(
+            '[%(asctime)s] [%(levelname)s] %(message)s')
+        handler.setFormatter(formatter)
         self._stdlib_logger.addHandler(handler)
 
         self._levels = {
